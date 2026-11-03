@@ -123,6 +123,9 @@
             margin-bottom: 24px;
             transition: 0.2s;
         }
+        .card:hover {
+            border-color: #cbd5e1;
+        }
         .card-header {
             display: flex;
             justify-content: space-between;
@@ -146,6 +149,27 @@
             padding: 4px 14px;
             border-radius: 30px;
             color: #475569;
+        }
+        .card-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .answer-toggle {
+            padding: 6px 13px;
+            border-radius: 30px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #334155;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: 0.15s;
+        }
+        .answer-toggle:hover {
+            color: #1d4ed8;
+            border-color: #93c5fd;
+            background: #eff6ff;
         }
         .question-text {
             font-size: 1.18rem;
@@ -249,7 +273,9 @@
         }
         .footer-actions {
             display: flex;
+            align-items: center;
             justify-content: center;
+            gap: 12px;
             margin: 20px 0 10px;
         }
         .btn-large {
@@ -272,6 +298,28 @@
             opacity: 0.5;
             transform: none;
             box-shadow: none;
+            cursor: not-allowed;
+        }
+        .footer-note {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        .secondary-button {
+            padding: 10px 22px;
+            border-radius: 30px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #334155;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .secondary-button:hover {
+            border-color: #94a3b8;
+            background: #f8fafc;
+        }
+        .secondary-button:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
         }
         .toast {
@@ -306,6 +354,8 @@
             .question-text { font-size: 1.05rem; }
             .option-item { padding: 10px 14px; font-size: 0.95rem; }
             .btn-large { width: 100%; }
+            .footer-actions { flex-direction: column; }
+            .secondary-button { width: 100%; }
         }
     </style>
 </head>
@@ -325,20 +375,19 @@
             <option value="简答题">📝 简答题</option>
             <option value="编程题">💻 编程题</option>
         </select>
-        <button id="randomBtn" class="primary">🎲 随机一题</button>
-        <button id="nextBtn">⏭️ 下一题</button>
+        <button id="toggleAllAnswersBtn" class="primary">✅ 显示所有答案</button>
+        <button id="resetBtn">↺ 清空当前作答</button>
         <span class="spacer"></span>
-        <button id="viewAnswerBtn">👁️ 查看本题答案</button>
-        <button id="showAllBtn" class="warn">📋 显示当前题型所有答案</button>
-        <span class="badge" id="progressBadge">0 / 210</span>
+        <span class="badge" id="progressBadge">共 210 题</span>
     </div>
 
     <div id="questionContainer">
-        <!-- 动态渲染题目卡片 -->
+        <!-- 按题型一次性渲染全部题目 -->
     </div>
 
     <div class="footer-actions">
-        <button class="btn-large" id="nextLargeBtn">下一题 →</button>
+        <span class="footer-note" id="footerNote"></span>
+        <button class="secondary-button" id="backToTopBtn">↑ 回到顶部</button>
     </div>
 </div>
 
@@ -571,22 +620,18 @@
     ];
 
     // ==================== 状态管理 ====================
-    let currentFilter = 'all';          // 当前题型筛选
-    let filteredQuestions = [];         // 筛选后的题目列表
-    let currentIndex = 0;               // 当前题目在 filteredQuestions 中的索引
-    let currentSelectedOption = null;   // 当前用户选择的选项（用于单选题/判断题）
-    let answerVisible = false;          // 当前题目是否已显示答案（通过"查看本题答案"手动触发）
-    let showAllMode = false;            // 是否处于"显示当前题型所有答案"模式
+    let filteredQuestions = [];
+    const selectedAnswers = new Map();   // 每题独立保存已选项
+    const visibleAnswers = new Set();    // 每题独立保存答案显示状态
 
     // DOM 元素
     const typeSelect = document.getElementById('typeSelect');
-    const randomBtn = document.getElementById('randomBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const viewAnswerBtn = document.getElementById('viewAnswerBtn');
-    const showAllBtn = document.getElementById('showAllBtn');
+    const toggleAllAnswersBtn = document.getElementById('toggleAllAnswersBtn');
+    const resetBtn = document.getElementById('resetBtn');
     const progressBadge = document.getElementById('progressBadge');
     const questionContainer = document.getElementById('questionContainer');
-    const nextLargeBtn = document.getElementById('nextLargeBtn');
+    const footerNote = document.getElementById('footerNote');
+    const backToTopBtn = document.getElementById('backToTopBtn');
     const toast = document.getElementById('toast');
 
     // ==================== 工具函数 ====================
@@ -599,237 +644,198 @@
         }, 2000);
     }
 
-    // 根据题型筛选
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function getQuestion(questionId) {
+        return questionBank.find(q => q.id === Number(questionId));
+    }
+
+    function isAnswerVisible(question) {
+        return visibleAnswers.has(question.id);
+    }
+
+    function formatLongAnswer(answer) {
+        return String(answer || '')
+            .replace(/^```[a-zA-Z0-9_-]*\s*\n?/, '')
+            .replace(/\n?```\s*$/, '');
+    }
+
+    // 根据题型筛选，并一次性渲染该题型下的所有题目
     function applyFilter() {
-        const val = typeSelect.value;
-        currentFilter = val;
-        if (val === 'all') {
-            filteredQuestions = questionBank.slice();
-        } else {
-            filteredQuestions = questionBank.filter(q => q.type === val);
-        }
-        currentIndex = 0;
-        currentSelectedOption = null;
-        answerVisible = false;
-        showAllMode = false;
-        updateProgress();
+        const selectedType = typeSelect.value;
+        filteredQuestions = selectedType === 'all'
+            ? questionBank.slice()
+            : questionBank.filter(q => q.type === selectedType);
         render();
     }
 
-    function updateProgress() {
-        if (filteredQuestions.length === 0) {
-            progressBadge.textContent = '0 / 0';
-            return;
-        }
-        progressBadge.textContent = `${currentIndex + 1} / ${filteredQuestions.length}`;
+    function updateControls() {
+        const answeredCount = filteredQuestions.filter(q => selectedAnswers.has(q.id)).length;
+        const visibleCount = filteredQuestions.filter(q => visibleAnswers.has(q.id)).length;
+        const allAnswersVisible = filteredQuestions.length > 0 && visibleCount === filteredQuestions.length;
+
+        progressBadge.textContent = `${filteredQuestions.length} 题 · 已答 ${answeredCount}`;
+        toggleAllAnswersBtn.textContent = allAnswersVisible ? '🙈 收起所有答案' : '✅ 显示所有答案';
+        resetBtn.disabled = answeredCount === 0 && visibleCount === 0;
+        footerNote.textContent = `当前显示 ${filteredQuestions.length} 道题，答案状态会保留在本页面中。`;
     }
 
-    // 获取当前题目对象
-    function getCurrentQuestion() {
-        if (filteredQuestions.length === 0) return null;
-        return filteredQuestions[currentIndex];
-    }
-
-    // 渲染题目卡片
-    function render() {
-        if (filteredQuestions.length === 0) {
-            questionContainer.innerHTML = `<div class="empty-state">📭 当前题型下暂无题目</div>`;
-            nextLargeBtn.disabled = true;
-            return;
-        }
-        nextLargeBtn.disabled = false;
-        const q = getCurrentQuestion();
-        if (!q) return;
-
-        const showAnswer = answerVisible || showAllMode;
+    function renderQuestionCard(q) {
+        const showAnswer = isAnswerVisible(q);
+        const selectedOption = selectedAnswers.get(q.id) || null;
         const isChoice = q.type === '单选题' || q.type === '判断题';
+        const isLongAnswer = q.type === '简答题' || q.type === '编程题';
 
-        // 构建选项 HTML
         let optionsHtml = '';
         if (q.options && q.options.length > 0) {
-            optionsHtml = `<div class="options">`;
-            q.options.forEach((opt, idx) => {
-                const optLetter = String.fromCharCode(65 + idx); // A, B, C, D
+            optionsHtml = '<div class="options">';
+            q.options.forEach((option, index) => {
+                const optionLetter = String.fromCharCode(65 + index);
                 let classes = 'option-item';
-                if (isChoice) {
-                    // 用户选择高亮
-                    if (currentSelectedOption === optLetter) classes += ' selected';
-                    // 答案可见时，高亮正确答案和错误答案
-                    if (showAnswer) {
-                        if (optLetter === q.answer) {
-                            classes += ' correct-highlight';
-                        } else if (currentSelectedOption === optLetter && optLetter !== q.answer) {
-                            classes += ' wrong-highlight';
-                        }
+
+                if (selectedOption === optionLetter) classes += ' selected';
+                if (showAnswer) {
+                    if (optionLetter === q.answer) {
+                        classes += ' correct-highlight';
+                    } else if (selectedOption === optionLetter) {
+                        classes += ' wrong-highlight';
                     }
                 }
-                optionsHtml += `<div class="${classes}" data-opt="${optLetter}" onclick="handleOptionClick('${optLetter}')">
-                    <span class="option-prefix">${optLetter}</span>
-                    <span class="option-text">${opt.substring(2)}</span>
-                </div>`;
+
+                const optionText = option.replace(/^[A-Z][.、]\s*/, '');
+                optionsHtml += `
+                    <div class="${classes}" data-opt="${optionLetter}" onclick="handleOptionClick(${q.id}, '${optionLetter}')">
+                        <span class="option-prefix">${optionLetter}</span>
+                        <span class="option-text">${escapeHtml(optionText)}</span>
+                    </div>`;
             });
-            optionsHtml += `</div>`;
+            optionsHtml += '</div>';
         }
 
-        // 答案面板 HTML
         let answerHtml = '';
         if (showAnswer) {
-            const answerText = q.answer || '（见解析）';
-            let explanationHtml = '';
-            if (q.explanation) {
-                explanationHtml = `<div class="explanation">💡 ${q.explanation}</div>`;
-            }
-            answerHtml = `<div class="answer-panel">
-                <div class="answer-line"><span class="answer-label">正确答案</span><span class="answer-value">${answerText}</span></div>
-                ${q.type === '编程题' || q.type === '简答题' ? `<pre style="white-space:pre-wrap;font-size:0.9rem;background:#f8fafc;padding:12px;border-radius:14px;margin-top:8px;overflow-x:auto;">${q.answer}</pre>` : ''}
-                ${explanationHtml}
-            </div>`;
+            const answerLabel = isLongAnswer ? '参考答案' : '正确答案';
+            const answerText = escapeHtml(q.answer || '（见解析）');
+            const longAnswerHtml = isLongAnswer
+                ? `<pre style="white-space:pre-wrap;font-family:inherit;line-height:1.65;font-size:0.95rem;background:#f8fafc;padding:14px;border-radius:14px;overflow-wrap:anywhere;">${escapeHtml(formatLongAnswer(q.answer))}</pre>`
+                : '';
+            const explanationHtml = q.explanation
+                ? `<div class="explanation">💡 ${escapeHtml(q.explanation)}</div>`
+                : '';
+
+            answerHtml = `
+                <div class="answer-panel">
+                    <div class="answer-line">
+                        <span class="answer-label">${answerLabel}</span>
+                        ${isLongAnswer ? '' : `<span class="answer-value">${answerText}</span>`}
+                    </div>
+                    ${longAnswerHtml}
+                    ${explanationHtml}
+                </div>`;
         }
 
-        // 题目类型徽章
-        const typeBadge = `<span class="q-type">${q.type}</span>`;
-        const questionId = `<span class="q-num">第 ${q.id} 题</span>`;
-
-        questionContainer.innerHTML = `
-            <div class="card">
+        const actionText = showAnswer ? '🙈 隐藏答案' : '👁️ 查看答案';
+        return `
+            <article class="card" data-question-id="${q.id}">
                 <div class="card-header">
-                    ${questionId}
-                    ${typeBadge}
+                    <span class="q-num">第 ${q.id} 题</span>
+                    <div class="card-badges">
+                        <span class="q-type">${q.type}</span>
+                        <button class="answer-toggle" onclick="toggleQuestionAnswer(${q.id})">${actionText}</button>
+                    </div>
                 </div>
-                <div class="question-text">${q.question.replace(/\n/g, '<br>')}</div>
+                <div class="question-text">${escapeHtml(q.question).replace(/\n/g, '<br>')}</div>
                 ${optionsHtml}
                 ${answerHtml}
-            </div>
-        `;
-
-        // 同步按钮状态
-        viewAnswerBtn.textContent = showAnswer ? '🙈 隐藏答案' : '👁️ 查看本题答案';
-        showAllBtn.textContent = showAllMode ? '📋 取消显示所有答案' : '📋 显示当前题型所有答案';
+            </article>`;
     }
 
-    // 选项点击事件（全局函数）
-    window.handleOptionClick = function(optLetter) {
-        const q = getCurrentQuestion();
-        if (!q) return;
-        if (q.type !== '单选题' && q.type !== '判断题') return;
-        currentSelectedOption = optLetter;
-        answerVisible = true; // 选择后自动显示答案
-        render();
-        showToast(`已选择 ${optLetter}`);
+    function render() {
+        if (filteredQuestions.length === 0) {
+            questionContainer.innerHTML = '<div class="empty-state">📭 当前题型下暂无题目</div>';
+            updateControls();
+            return;
+        }
+
+        questionContainer.innerHTML = filteredQuestions.map(renderQuestionCard).join('');
+        updateControls();
+    }
+
+    function refreshQuestionCard(questionId) {
+        const question = getQuestion(questionId);
+        const card = questionContainer.querySelector(`[data-question-id="${questionId}"]`);
+        if (question && card) {
+            card.outerHTML = renderQuestionCard(question);
+        }
+        updateControls();
+    }
+
+    // 选择后只更新当前题，不跳转，也不影响其他题目
+    window.handleOptionClick = function(questionId, optionLetter) {
+        const question = getQuestion(questionId);
+        if (!question || (question.type !== '单选题' && question.type !== '判断题')) return;
+
+        selectedAnswers.set(question.id, optionLetter);
+        visibleAnswers.add(question.id);
+        refreshQuestionCard(question.id);
+
+        const result = optionLetter === question.answer ? '回答正确' : `回答错误，正确答案是 ${question.answer}`;
+        showToast(`第 ${question.id} 题：${result}`);
     };
 
-    // 下一题
-    function goToNext() {
-        if (filteredQuestions.length === 0) return;
-        if (currentIndex < filteredQuestions.length - 1) {
-            currentIndex++;
+    window.toggleQuestionAnswer = function(questionId) {
+        const question = getQuestion(questionId);
+        if (!question) return;
+
+        if (visibleAnswers.has(question.id)) {
+            visibleAnswers.delete(question.id);
         } else {
-            showToast('已经是最后一题了，重新从第一题开始');
-            currentIndex = 0;
+            visibleAnswers.add(question.id);
         }
-        currentSelectedOption = null;
-        answerVisible = false;
-        showAllMode = false;
-        updateProgress();
+        refreshQuestionCard(question.id);
+    };
+
+    function toggleAllAnswers() {
+        const allAnswersVisible = filteredQuestions.length > 0
+            && filteredQuestions.every(q => visibleAnswers.has(q.id));
+
+        filteredQuestions.forEach(q => {
+            if (allAnswersVisible) {
+                visibleAnswers.delete(q.id);
+            } else {
+                visibleAnswers.add(q.id);
+            }
+        });
         render();
+        showToast(allAnswersVisible ? '已收起当前所有答案' : `已显示 ${filteredQuestions.length} 道题的答案`);
     }
 
-    // 随机一题
-    function goToRandom() {
-        if (filteredQuestions.length === 0) return;
-        const newIndex = Math.floor(Math.random() * filteredQuestions.length);
-        currentIndex = newIndex;
-        currentSelectedOption = null;
-        answerVisible = false;
-        showAllMode = false;
-        updateProgress();
+    function resetCurrentAnswers() {
+        filteredQuestions.forEach(q => {
+            selectedAnswers.delete(q.id);
+            visibleAnswers.delete(q.id);
+        });
         render();
-        showToast('🎲 随机跳转');
-    }
-
-    // 显示/隐藏当前题目答案
-    function toggleAnswer() {
-        if (filteredQuestions.length === 0) return;
-        if (showAllMode) {
-            // 如果处于显示所有模式，先退出该模式
-            showAllMode = false;
-        }
-        answerVisible = !answerVisible;
-        render();
-        showToast(answerVisible ? '已显示答案' : '已隐藏答案');
-    }
-
-    // 显示当前题型所有答案
-    function toggleShowAll() {
-        if (filteredQuestions.length === 0) return;
-        if (!showAllMode) {
-            // 开启所有答案模式
-            showAllMode = true;
-            answerVisible = false; // 重置单题答案状态
-            render();
-            // 连续生成所有题目答案的预览（这里用简要方式：弹出摘要）
-            const summary = filteredQuestions.map(q => {
-                const ans = q.answer || '（见解析）';
-                return `第${q.id}题：${ans}`;
-            }).join('\n');
-            showToast(`📋 已显示当前题型所有答案（共${filteredQuestions.length}题）`);
-            // 可选：alert摘要，但为了避免打扰，用toast提示。也可以控制台输出方便查看。
-            console.log('当前题型所有答案：\n' + summary);
-        } else {
-            showAllMode = false;
-            answerVisible = false;
-            render();
-            showToast('已取消显示所有答案');
-        }
+        showToast('已清空当前题型的作答状态');
     }
 
     // ==================== 事件绑定 ====================
-    typeSelect.addEventListener('change', () => {
-        applyFilter();
-    });
-
-    randomBtn.addEventListener('click', () => {
-        goToRandom();
-    });
-
-    nextBtn.addEventListener('click', () => {
-        goToNext();
-    });
-
-    viewAnswerBtn.addEventListener('click', () => {
-        toggleAnswer();
-    });
-
-    showAllBtn.addEventListener('click', () => {
-        toggleShowAll();
-    });
-
-    nextLargeBtn.addEventListener('click', () => {
-        goToNext();
-    });
-
-    // 键盘快捷键：左/右方向键切换
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowRight') {
-            e.preventDefault();
-            goToNext();
-        } else if (e.key === 'ArrowLeft') {
-            e.preventDefault();
-            if (filteredQuestions.length === 0) return;
-            if (currentIndex > 0) {
-                currentIndex--;
-            } else {
-                currentIndex = filteredQuestions.length - 1;
-            }
-            currentSelectedOption = null;
-            answerVisible = false;
-            showAllMode = false;
-            updateProgress();
-            render();
-        }
+    typeSelect.addEventListener('change', applyFilter);
+    toggleAllAnswersBtn.addEventListener('click', toggleAllAnswers);
+    resetBtn.addEventListener('click', resetCurrentAnswers);
+    backToTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     // ==================== 初始化 ====================
+    document.querySelector('h1 small').textContent = `共${questionBank.length}题`;
     applyFilter();
 </script>
 </body>
