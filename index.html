@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计算机视觉期末 · 刷题助手</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f1f5f9;
+            padding: 20px 16px 40px;
+            color: #0f172a;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            color: #1e293b;
+            letter-spacing: -0.02em;
+        }
+        h1 small {
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: #64748b;
+            margin-left: auto;
+            background: #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 30px;
+        }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin: 20px 0 24px;
+            background: #ffffffdd;
+            backdrop-filter: blur(6px);
+            padding: 12px 18px;
+            border-radius: 48px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            border: 1px solid #e2e8f0;
+        }
+        .toolbar select {
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #1e293b;
+            cursor: pointer;
+            outline: none;
+            transition: 0.15s;
+        }
+        .toolbar select:hover {
+            border-color: #94a3b8;
+        }
+        .toolbar button {
+            padding: 8px 18px;
+            border-radius: 30px;
+            border: none;
+            background: white;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #1e293b;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.15s;
+            border: 1px solid #e2e8f0;
+        }
+        .toolbar button:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+        .toolbar button.primary {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+        .toolbar button.primary:hover {
+            background: #2563eb;
+        }
+        .toolbar button.warn {
+            background: #f97316;
+            border-color: #f97316;
+            color: white;
+        }
+        .toolbar button.warn:hover {
+            background: #ea580c;
+        }
+        .toolbar .spacer {
+            flex: 1;
+        }
+        .badge {
+            background: #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            color: #334155;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 28px 26px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 24px;
+            transition: 0.2s;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .q-num {
+            font-weight: 600;
+            color: #3b82f6;
+            background: #eff6ff;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            letter-spacing: 0.01em;
+        }
+        .q-type {
+            font-size: 0.85rem;
+            background: #f1f5f9;
+            padding: 4px 14px;
+            border-radius: 30px;
+            color: #475569;
+        }
+        .question-text {
+            font-size: 1.18rem;
+            font-weight: 500;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            word-break: break-word;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .option-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 18px;
+            border-radius: 18px;
+            background: #f8fafc;
+            border: 1.5px solid transparent;
+            cursor: pointer;
+            transition: 0.15s;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        .option-item:hover {
+            background: #f1f5f9;
+        }
+        .option-item.selected {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.1);
+        }
+        .option-item.correct-highlight {
+            background: #dcfce7;
+            border-color: #22c55e;
+        }
+        .option-item.wrong-highlight {
+            background: #fee2e2;
+            border-color: #ef4444;
+        }
+        .option-prefix {
+            font-weight: 600;
+            min-width: 26px;
+            color: #475569;
+        }
+        .option-text {
+            flex: 1;
+        }
+        .answer-panel {
+            margin-top: 16px;
+            padding: 18px 20px;
+            background: #f0f9ff;
+            border-radius: 20px;
+            border-left: 5px solid #3b82f6;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            animation: fadeIn 0.25s ease;
+        }
+        .answer-line {
+            font-size: 1.05rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 12px;
+        }
+        .answer-label {
+            font-weight: 600;
+            color: #1e40af;
+            background: #dbeafe;
+            padding: 2px 12px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+        }
+        .answer-value {
+            font-weight: 600;
+            color: #0f172a;
+            word-break: break-word;
+        }
+        .explanation {
+            font-size: 0.95rem;
+            color: #475569;
+            line-height: 1.6;
+            background: #ffffff;
+            padding: 12px 16px;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            margin-top: 6px;
+        }
+        .empty-state {
+            background: white;
+            border-radius: 28px;
+            padding: 60px 20px;
+            text-align: center;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            font-size: 1.1rem;
+        }
+        .footer-actions {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0 10px;
+        }
+        .btn-large {
+            padding: 12px 40px;
+            border-radius: 40px;
+            border: none;
+            background: #3b82f6;
+            color: white;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+        .btn-large:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        .btn-large:disabled {
+            opacity: 0.5;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.25s;
+            z-index: 999;
+            white-space: nowrap;
+        }
+        .toast.show {
+            opacity: 1;
+            bottom: 40px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 600px) {
+            h1 { font-size: 1.4rem; }
+            .toolbar { border-radius: 24px; padding: 12px 14px; }
+            .card { padding: 20px 16px; }
+            .question-text { font-size: 1.05rem; }
+            .option-item { padding: 10px 14px; font-size: 0.95rem; }
+            .btn-large { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>
+        🧠 计算机视觉期末 · 刷题助手
+        <small>共210题</small>
+    </h1>
+
+    <div class="toolbar">
+        <select id="typeSelect" aria-label="选择题型">
+            <option value="all">📚 全部题型</option>
+            <option value="单选题">🔘 单选题</option>
+            <option value="填空题">✏️ 填空题</option>
+            <option value="判断题">✅ 判断题</option>
+            <option value="简答题">📝 简答题</option>
+            <option value="编程题">💻 编程题</option>
+        </select>
+        <button id="randomBtn" class="primary">🎲 随机一题</button>
+        <button id="nextBtn">⏭️ 下一题</button>
+        <span class="spacer"></span>
+        <button id="viewAnswerBtn">👁️ 查看本题答案</button>
+        <button id="showAllBtn" class="warn">📋 显示当前题型所有答案</button>
+        <span class="badge" id="progressBadge">0 / 210</span>
+    </div>
+
+    <div id="questionContainer">
+        <!-- 动态渲染题目卡片 -->
+    </div>
+
+    <div class="footer-actions">
+        <button class="btn-large" id="nextLargeBtn">下一题 →</button>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    // ==================== 题库数据 ====================
+    // 根据 PDF 整理（精简了部分重复的解析，但保留了核心信息）
+    // 格式: { id, type, question, options: [], answer: string, explanation: string, code?: string }
+    const questionBank = [
+        // ---------- 单选题 1-90 ----------
+        { id: 1, type: '单选题', question: '计算机视觉任务里，仅判断图片内容“是什么”的任务是（ ）', options: ['A. 目标检测', 'B. 图像分类', 'C. 目标跟踪', 'D. 图像分割'], answer: 'B', explanation: '图像分类负责判断图像所属类别，解决“是什么”；目标检测解决“是什么、在哪里”。' },
+        { id: 2, type: '单选题', question: '计算机图形学和计算机视觉的区别，描述正确的是（ ）', options: ['A. 计算机图形学是从图像还原现实物体', 'B. 计算机图形学通过几何元素生成图像', 'C. 二者处理的任务完全一样', 'D. 计算机图形学需要处理照片做识别'], answer: 'B', explanation: '计算机图形学通过线、圆等几何基元来生成图像；计算机视觉是从图像去理解现实世界。' },
+        { id: 3, type: '单选题', question: '计算机视觉是一门研究让机器具备哪种能力的科学（ ）', options: ['A. 机器“看”', 'B. 机器“听”', 'C. 机器“读”', 'D. 机器“写”'], answer: 'A', explanation: '计算机视觉(CV)研究如何使机器“看”，模拟人类视觉，从图像中提取、处理、理解信息。' },
+        { id: 4, type: '单选题', question: '1963年，MIT的哪位研究者发表计算机视觉领域第一篇论文，从图像提取多面体三维结构（ ）', options: ['A. Marr', 'B. Roberts', 'C. Turing', 'D. Hinton'], answer: 'B', explanation: '1963年MIT的Roberts发表该领域首篇论文，实现从数字图像提取立方体、楔形体等物体三维结构。' },
+        { id: 5, type: '单选题', question: 'OpenCV的描述正确的是（ ）', options: ['A. 闭源商业付费软件', 'B. 开源跨平台计算机视觉库', 'C. 专门用来做数据库开发', 'D. 仅支持Java语言'], answer: 'B', explanation: 'OpenCV是开源、跨平台的计算机视觉库，支持Python、C++等多种编程语言。' },
+        { id: 6, type: '单选题', question: '下列不属于深度学习时代计算机视觉优点的是（ ）', options: ['A. 自动学习图像特征', 'B. 同一模型可处理多种问题', 'C. 契合人类视觉工作机制', 'D. 训练不需要大量数据'], answer: 'D', explanation: '深度学习的缺点是模型复杂，需要海量训练数据与大量计算资源。' },
+        { id: 7, type: '单选题', question: '语义分割要完成的工作是（ ）', options: ['A. 判断整张图片属于哪一大类', 'B. 区分图像中每一个像素所属的类别', 'C. 跟踪视频里物体的移动轨迹', 'D. 框选出图中所有物体的边框'], answer: 'B', explanation: '语义分割对图像的每一个像素做类别划分，只区分类别，不区分同类不同个体。' },
+        { id: 8, type: '单选题', question: '目标跟踪任务的输入条件一般需要（ ）', options: ['A. 不需要任何图像信息', 'B. 目标的初始位置', 'C. 已经分割好的全部像素', 'D. 多张不同类别的图片数据集'], answer: 'B', explanation: '目标跟踪需要给定目标初始位置，再预测视频后续帧目标的位置、尺度信息。' },
+        { id: 9, type: '单选题', question: 'Marr视觉理论的核心思想是由二维图像恢复物体的（ ）', options: ['A. 颜色信息', 'B. 三维表面形状', 'C. 边缘纹理', 'D. 灰度数值'], answer: 'B', explanation: 'Marr视觉理论提出人类视觉可以从二维视网膜图像，重建物体可见的三维表面形状。' },
+        { id: 10, type: '单选题', question: '既要识别物体类别，又要输出物体在图像中位置的任务是（ ）', options: ['A. 图像分类', 'B. 图像分割', 'C. 目标检测', 'D. 目标跟踪'], answer: 'C', explanation: '目标检测不仅识别物体类别，还使用边界框标注物体所在图像位置。' },
+        { id: 11, type: '单选题', question: '量化等级越高，下面说法正确的是（ ）', options: ['A. 图像信息越少，文件体积越小', 'B. 灰度分辨率越高，图像质量越好，数据量变大', 'C. 灰度分辨率越低，图像质量越差', 'D. 像素的空间位置会发生改变'], answer: 'B', explanation: '量化等级越高，图像信息越丰富，灰度分辨率越高，图像质量越好，但存储的数据量会增多。' },
+        { id: 12, type: '单选题', question: '将模拟图像转换为数字图像的两个关键环节是（ ）', options: ['A. 采样、量化', 'B. 压缩、编码', 'C. 读取、保存', 'D. 缩放、翻转'], answer: 'A', explanation: '图像数字化包含采样和量化两个步骤，采样实现空间离散，量化实现灰度值离散。' },
+        { id: 13, type: '单选题', question: '关于采样的描述正确的是（ ）', options: ['A. 将连续灰度值转为整数', 'B. 将空间上连续的图像转为离散点', 'C. 修改图像色彩通道', 'D. 改变图像文件存储格式'], answer: 'B', explanation: '采样是把空间上连续的图像转换为离散像素点的过程；量化是处理灰度数值。' },
+        { id: 14, type: '单选题', question: 'cv2.imread函数中，哪个标记代表以灰度模式读取图像（ ）', options: ['A. cv2.IMREAD_UNCHANGED', 'B. cv2.IMREAD_GRAYSCALE', 'C. cv2.IMREAD_COLOR', 'D. cv2.IMREAD_RGB'], answer: 'B', explanation: 'cv2.IMREAD_GRAYSCALE（等价数值0）以灰度模式读取图像。' },
+        { id: 15, type: '单选题', question: '灰度图像的像素灰度取值范围是（ ）', options: ['A. 0-1', 'B. 0-255', 'C. 0-1024', 'D. 1-256'], answer: 'B', explanation: '灰度图像灰度值取值范围为0-255。' },
+        { id: 16, type: '单选题', question: '每个像素只有黑色或者白色两种取值的图像是（ ）', options: ['A. 灰度图像', 'B. 彩色图像', 'C. 二值图像', 'D. 索引图像'], answer: 'C', explanation: '二值图像又称黑白图像，像素仅为黑色或者白色。' },
+        { id: 17, type: '单选题', question: '图像仿射变换，不需要具备下面哪个性质（ ）', options: ['A. 保持直线平直', 'B. 保持线条之间平行', 'C. 图像像素总数一定不变', 'D. 保持线段长度比例不变'], answer: 'C', explanation: '仿射变换保持平直性、平行性、线段长度比例；变换后图像像素总数可以发生改变。' },
+        { id: 18, type: '单选题', question: 'cv2.flip(img, 0)执行的操作是（ ）', options: ['A. 沿y轴水平翻转', 'B. 沿x轴垂直翻转', 'C. 同时沿x、y轴翻转', 'D. 图像旋转90度'], answer: 'B', explanation: 'flipCode等于0：沿x轴翻转；正数沿y轴；负数同时沿x、y轴翻转。' },
+        { id: 19, type: '单选题', question: 'cv2.waitKey(0)中参数为0代表的含义是（ ）', options: ['A. 等待0毫秒自动关闭窗口', 'B. 无限等待按键按下', 'C. 等待0秒保存图片', 'D. 等待0帧图像'], answer: 'B', explanation: 'delay参数为0或者负数时，代表无限等待用户按下键盘按键。' },
+        { id: 20, type: '单选题', question: '读取彩色图像后，image.shape返回的元组顺序是（ ）', options: ['A. （列数，行数，通道数）', 'B. （行数，列数，通道数）', 'C. （通道数，行数，列数）', 'D. （行数，通道数，列数）'], answer: 'B', explanation: '彩色图像shape返回（像素行数，像素列数，通道数）；灰度图像只返回（行数，列数）。' },
+        { id: 21, type: '单选题', question: '在OpenCV中，HSV色彩空间H（色调）的取值范围是（ ）', options: ['A. 0-255', 'B. 0-180', 'C. 0-100', 'D. 0-1'], answer: 'B', explanation: 'OpenCV里HSV的H取值0~180，S、V取值范围是0~255。' },
+        { id: 22, type: '单选题', question: '关于图像加法，使用numpy“+”运算符进行像素相加，数值超过255会执行什么操作（ ）', options: ['A. 直接截断为255', 'B. 对256取模', 'C. 自动置0', 'D. 报错终止'], answer: 'B', explanation: 'numpy加号运算，和大于255执行取模；cv2.add函数大于255直接截断为255。' },
+        { id: 23, type: '单选题', question: 'HSV色彩空间中H分量代表的是（ ）', options: ['A. 饱和度', 'B. 亮度', 'C. 色调', 'D. 对比度'], answer: 'C', explanation: 'H为色调，代表色彩本身属性；S是饱和度；V代表亮度。' },
+        { id: 24, type: '单选题', question: 'cv2.inRange()函数输出图像中，符合颜色条件的像素值被设置为（ ）', options: ['A. 0', 'B. 127', 'C. 255', 'D. 100'], answer: 'C', explanation: 'inRange函数，满足阈值范围像素量255（白色），不满足量0（黑色），输出二值掩模。' },
+        { id: 25, type: '单选题', question: '提取图像指定颜色范围像素，生成二值掩模图像依靠的色彩空间一般选择（ ）', options: ['A. BGR', 'B. HSV', 'C. GRAY', 'D. RGBA'], answer: 'B', explanation: 'HSV对颜色描述更直观，适合做颜色筛选、色彩分割。' },
+        { id: 26, type: '单选题', question: '图像通道拆分后，单独取出的某一个通道，直接显示出来是（ ）', options: ['A. 彩色图像', 'B. 灰度图像', 'C. 二值图像', 'D. 彩色反转图像'], answer: 'B', explanation: '拆分后单通道只有亮度信息，直接显示为灰度图；需要补零合并才能显示彩色效果。' },
+        { id: 27, type: '单选题', question: '将BGR图像转换为灰度图像，得到的GRAY图像通道数量为（ ）', options: ['A. 3', 'B. 2', 'C. 1', 'D. 4'], answer: 'C', explanation: '灰度图像是单通道图像，每个像素只保存灰度亮度信息。' },
+        { id: 28, type: '单选题', question: '掩模mask图像当中，表示允许处理、暴露出来的区域像素值是（ ）', options: ['A. 0', 'B. 127', 'C. 255', 'D. 100'], answer: 'C', explanation: '掩模规则：255白色代表允许处理的区域；0黑色代表被遮挡忽略区域。' },
+        { id: 29, type: '单选题', question: 'HSV色彩空间S分量描述的是（ ）', options: ['A. 色彩的纯度', 'B. 光的明暗程度', 'C. 颜色种类', 'D. 图像清晰度'], answer: 'A', explanation: 'S饱和度表示色彩纯度；V代表人眼感受到光的明暗亮度。' },
+        { id: 30, type: '单选题', question: '按位非运算会对图像像素产生什么效果（ ）', options: ['A. 图像颜色取反', 'B. 图像整体变亮', 'C. 图像整体变暗', 'D. 图像放大'], answer: 'A', explanation: 'bitwise_not按位非，将像素二进制全部按位取反，实现图像颜色反转。' },
+        { id: 31, type: '单选题', question: '高斯滤波卷积核权重分布规律是（ ）', options: ['A. 全部权重一样', 'B. 越靠近模板中心权重越大', 'C. 越靠近模板边缘权重越大', 'D. 只选取邻域中间像素直接输出'], answer: 'B', explanation: '高斯滤波，距离中心点越近权重越高，越远离中心点权重越小。' },
+        { id: 32, type: '单选题', question: '去除椒盐噪声效果最好的滤波方式是（ ）', options: ['A. 均值滤波', 'B. 高斯滤波', 'C. 中值滤波', 'D. 双边滤波'], answer: 'C', explanation: '中值滤波对邻域像素排序，取中间灰度值，对椒盐噪声去除效果突出。' },
+        { id: 33, type: '单选题', question: '图像滤波卷积运算中，在图像上滑动进行计算的矩阵称为（ ）', options: ['A. 直方图', 'B. 卷积核', 'C. 掩模', 'D. 累积分布表'], answer: 'B', explanation: '卷积核也叫滤波模板，在图像上滑动，完成卷积计算实现滤波。' },
+        { id: 34, type: '单选题', question: '中值滤波的卷积核ksize参数必须满足的条件是（ ）', options: ['A. 偶数', 'B. 正奇数', 'C. 任意正整数', 'D. 必须大于10'], answer: 'B', explanation: '中值滤波核尺寸必须是正奇数，保证存在明确的中心像素点。' },
+        { id: 35, type: '单选题', question: '均值滤波采用的卷积核特点是（ ）', options: ['A. 靠近中心权重更大', 'B. 全部元素权重相等', 'C. 对邻域像素排序取中间值', 'D. 同时考虑空间与色彩差异'], answer: 'B', explanation: '均值滤波卷积核所有元素取值相同，计算邻域像素平均值作为输出。' },
+        { id: 36, type: '单选题', question: '卷积核尺寸越大，图像平滑效果会发生什么变化（ ）', options: ['A. 模糊程度减弱', 'B. 模糊程度增强', 'C. 没有任何变化', 'D. 图像对比度自动提升'], answer: 'B', explanation: '滤波模板尺寸越大，参与计算邻域像素越多，图像模糊平滑效果越强。' },
+        { id: 37, type: '单选题', question: '灰度直方图的横轴代表的是（ ）', options: ['A. 像素数量', 'B. 灰度级', 'C. 图像高度', 'D. 图像宽度'], answer: 'B', explanation: '灰度直方图x轴为灰度级，y轴代表对应灰度级的像素个数。' },
+        { id: 38, type: '单选题', question: '直方图均衡化主要作用是（ ）', options: ['A. 图像降噪平滑', 'B. 增强图像整体对比度', 'C. 图像色彩分割', 'D. 图像边缘提取'], answer: 'B', explanation: '直方图均衡化把直方图变换为近似均匀分布，扩大灰度动态范围，增强图像对比度。' },
+        { id: 39, type: '单选题', question: '双边滤波计算像素输出值时，需要综合考虑哪两项信息（ ）', options: ['A. 空间距离、色彩差异', 'B. 像素灰度统计、直方图分布', 'C. 图像高度、图像宽度', 'D. 噪声强度、模板尺寸'], answer: 'A', explanation: '双边滤波同时参考空间距离远近，以及像素之间色彩差别两个维度。' },
+        { id: 40, type: '单选题', question: '关于图像直方图，下面说法正确的是（ ）', options: ['A. 直方图可以反映像素所在的空间位置', 'B. 一幅图像对应唯一直方图，同一个直方图可以对应多张不同图像', 'C. 子图像直方图相加不等于原图直方图', 'D. 直方图只能用于彩色图像统计'], answer: 'B', explanation: '图像直方图只统计灰度出现频次，不记录像素位置；一幅图像直方图唯一，但一个直方图可对应多张图像。' },
+        { id: 41, type: '单选题', question: 'cv2.RETR_EXTERNAL轮廓查找模式的作用是（ ）', options: ['A. 查找全部轮廓，建立完整树状层次', 'B. 只查找图像最外层轮廓', 'C. 查找所有轮廓，不保存层次关系', 'D. 建立两层内外轮廓层次'], answer: 'B', explanation: 'RETR_EXTERNAL模式，仅仅提取图像最外层的轮廓，忽略内部嵌套轮廓。' },
+        { id: 42, type: '单选题', question: 'Canny边缘检测算法步骤顺序正确的是（ ）', options: ['A. 高斯去噪 → 计算梯度 → 非极大值抑制 → 双阈值检测', 'B. 非极大值抑制 → 高斯去噪 → 计算梯度 → 双阈值检测', 'C. 计算梯度 → 高斯去噪 → 双阈值检测 → 非极大值抑制', 'D. 高斯去噪 → 非极大值抑制 → 计算梯度 → 双阈值检测'], answer: 'A', explanation: 'Canny四步流程：高斯滤波去除噪声；计算像素梯度幅度与方向；非极大值抑制；高低双阈值滞后检测。' },
+        { id: 43, type: '单选题', question: '查找图像轮廓cv2.findContours函数，输入图像一般要求为（ ）', options: ['A. 彩色BGR图像', 'B. 二值图像', 'C. HSV图像', 'D. 浮点型图像'], answer: 'B', explanation: 'findContours查找轮廓需要传入二值图像，一般由Canny边缘检测得到。' },
+        { id: 44, type: '单选题', question: '图像边缘的本质是图像局部什么特征的不连续性（ ）', options: ['A. 分辨率大小', 'B. 灰度、颜色或者纹理', 'C. 图像文件大小', 'D. 图像通道数量'], answer: 'B', explanation: '图像边缘是图像局部特性不连续性，表现为灰度、颜色、纹理结构发生突变。' },
+        { id: 45, type: '单选题', question: '图像梯度在图像处理中代表的含义是（ ）', options: ['A. 图像像素的平均亮度', 'B. 图像灰度变化的速度', 'C. 图像整体对比度', 'D. 图像噪声强度'], answer: 'B', explanation: '图像梯度指图像灰度变换的速度，数学本质就是对图像灰度做求导运算。' },
+        { id: 46, type: '单选题', question: 'Sobel算子计算之后会产生负梯度值，为了避免信息丢失，需要调用哪个函数取绝对值（ ）', options: ['A. cv2.Canny()', 'B. cv2.convertScaleAbs()', 'C. cv2.findContours()', 'D. cv2.approxPolyDP()'], answer: 'B', explanation: 'cv2.convertScaleAbs()对梯度结果求取绝对值，把负数梯度转为合法像素值。' },
+        { id: 47, type: '单选题', question: '关于Scharr算子描述正确的是（ ）', options: ['A. 精度比Sobel算子更高', 'B. 属于二阶微分算子', 'C. 只能检测垂直方向边缘', 'D. 运算速度远慢于Sobel算子'], answer: 'A', explanation: 'Scharr是Sobel的改进版本，运算速度相当，边缘检测精度更高。' },
+        { id: 48, type: '单选题', question: '下列算子中属于二阶导数算子的是（ ）', options: ['A. Sobel算子', 'B. Scharr算子', 'C. Laplacian算子', 'D. Canny算子'], answer: 'C', explanation: 'Laplacian拉普拉斯算子是二阶导数算子；Sobel、Scharr属于一阶导数算子。' },
+        { id: 49, type: '单选题', question: 'Canny边缘检测输出图像是什么类型图像（ ）', options: ['A. 彩色三通道图像', 'B. 灰度多级图像', 'C. 二值图像', 'D. 多通道浮点图像'], answer: 'C', explanation: '经过双阈值判定后，像素只有0（非边缘）和255（边缘），输出二值图像。' },
+        { id: 50, type: '单选题', question: '霍夫变换的核心思想是将图像空间的几何形状映射到（ ）', options: ['A. 灰度直方图空间', 'B. 参数（霍夫）空间', 'C. RGB色彩空间', 'D. HSV色彩空间'], answer: 'B', explanation: '霍夫变换把图像空间中点映射到霍夫参数空间，寻找参数空间峰值实现几何图形检测。' },
+        { id: 51, type: '单选题', question: '膨胀运算对二值前景物体产生的效果是（ ）', options: ['A. 向内收缩', 'B. 向外扩张变大', 'C. 消除内部孔洞', 'D. 去除外部小噪点'], answer: 'B', explanation: '膨胀让前景边界向外扩张，可以填补细小空隙，连接断开的区域。' },
+        { id: 52, type: '单选题', question: '腐蚀运算对二值前景物体产生的效果是（ ）', options: ['A. 向外扩张变大', 'B. 向内收缩变小', 'C. 填充内部孔洞', 'D. 提取物体边缘'], answer: 'B', explanation: '腐蚀消融前景边界，物体向内收缩；小于结构元素的小物体会直接消失。' },
+        { id: 53, type: '单选题', question: 'Otsu阈值处理比较适合直方图呈现什么特征的图像（ ）', options: ['A. 单峰', 'B. 双峰', 'C. 多峰杂乱', 'D. 全部灰度一致'], answer: 'B', explanation: 'Otsu算法假设直方图为双峰，分别对应前景与背景；非双峰图像分割效果较差。' },
+        { id: 54, type: '单选题', question: '处理光照不均匀、局部明暗差异大的图像，优先选用（ ）', options: ['A. 固定全局阈值', 'B. Otsu全局阈值', 'C. 自适应阈值处理', 'D. 二值化固定阈值'], answer: 'C', explanation: '自适应阈值对图像不同局部区域计算各自阈值，可以应对光照明暗不均匀。' },
+        { id: 55, type: '单选题', question: '形态学变换中，用来扫描图像、完成集合运算的小矩阵称为（ ）', options: ['A. 掩码', 'B. 结构元素', 'C. 直方图', 'D. 边界框'], answer: 'B', explanation: '结构元素是形态学运算基础，是尺寸较小的像素集合，扫描图像完成腐蚀膨胀。' },
+        { id: 56, type: '单选题', question: '阈值处理的核心思想是根据设定阈值，将图像像素划分为（ ）', options: ['A. 仅0和255两类', 'B. 两类不同灰度取值', 'C. RGB三个通道', 'D. 多个连续灰度等级'], answer: 'B', explanation: '阈值处理依据阈值把像素分成两类，不一定必须是0和255，也可以是0-255之间任意两个值。' },
+        { id: 57, type: '单选题', question: 'Otsu阈值处理又被称为（ ）', options: ['A. 最小类内方差法', 'B. 最大类间方差法', 'C. 均值阈值法', 'D. 高斯阈值法'], answer: 'B', explanation: 'Otsu即最大类间方差法，自动寻找阈值，让前景、背景类间方差最大。' },
+        { id: 58, type: '单选题', question: '闭运算的运算顺序是（ ）', options: ['A. 先腐蚀，后膨胀', 'B. 先膨胀，后腐蚀', 'C. 先腐蚀，后梯度', 'D. 先顶帽，后膨胀'], answer: 'B', explanation: '闭运算 = 先膨胀、后腐蚀；主要用来填充前景内部细小孔洞。' },
+        { id: 59, type: '单选题', question: '开运算的运算顺序是（ ）', options: ['A. 先膨胀，后腐蚀', 'B. 先腐蚀，后膨胀', 'C. 先梯度，后腐蚀', 'D. 先膨胀，后梯度'], answer: 'B', explanation: '开运算 = 先腐蚀、后膨胀；用于消除背景上细小噪声点，保留目标物体大小。' },
+        { id: 60, type: '单选题', question: '形态学梯度运算的计算方式为（ ）', options: ['A. 原图像-开运算图像', 'B. 闭运算图像-原图像', 'C. 膨胀结果图像-腐蚀结果图像', 'D. 腐蚀结果图像-膨胀结果图像'], answer: 'C', explanation: '形态学梯度 = 膨胀图像减去腐蚀图像，得到物体轮廓边缘。' },
+        { id: 61, type: '单选题', question: '关于高斯金字塔下采样操作描述正确的是（ ）', options: ['A. 先做上采样，再做滤波', 'B. 先高斯滤波，再删除偶数行、列', 'C. 直接复制图像，不做任何运算', 'D. 只删除奇数行、列'], answer: 'B', explanation: '高斯金字塔下采样流程：先进行高斯滤波，之后删除图像偶数行和偶数列，得到尺寸缩小的图像。' },
+        { id: 62, type: '单选题', question: '暴力匹配BFMatcher中，适合SIFT浮点型描述子的距离度量类型是（ ）', options: ['A. NORM_L2', 'B. NORM_HAMMING', 'C. NORM_INF', 'D. NORM_L1'], answer: 'A', explanation: 'NORM_L2适用于SIFT浮点描述子；NORM_HAMMING用于ORB二进制描述子。' },
+        { id: 63, type: '单选题', question: 'ORB算法用于角点检测的子算法是（ ）', options: ['A. FAST', 'B. SIFT', 'C. SURF', 'D. Harris'], answer: 'A', explanation: 'ORB算法使用FAST做角点检测，使用BRIEF生成二进制特征描述子。' },
+        { id: 64, type: '单选题', question: 'RANSAC算法在图像拼接中的主要作用是（ ）', options: ['A. 图像高斯滤波降噪', 'B. 剔除误匹配外点，求解单应矩阵', 'C. 图像下采样，构建金字塔', 'D. 绘制特征匹配连线'], answer: 'B', explanation: 'RANSAC随机抽样一致性算法，过滤匹配点中的异常外点，求解可靠的透视单应矩阵。' },
+        { id: 65, type: '单选题', question: '图像拼接的作用是将有多部分重叠区域的多张图像合成一幅（ ）', options: ['A. 二值图像', 'B. 全景图像', 'C. 灰度图像', 'D. 金字塔图像'], answer: 'B', explanation: '图像拼接把存在重叠区域的多幅图像，经过特征匹配、透视变换处理，合成一幅无缝全景图。' },
+        { id: 66, type: '单选题', question: 'ORB算法生成特征描述符使用的算法是（ ）', options: ['A. FAST', 'B. BRIEF', 'C. SIFT', 'D. Laplacian'], answer: 'B', explanation: 'BRIEF算法通过比较像素对，生成二进制的特征描述向量。' },
+        { id: 67, type: '单选题', question: '下面哪一类不属于质量较好的图像特征（ ）', options: ['A. 角点', 'B. 斑点', 'C. 大面积均匀蓝色', 'D. 高密度纹理区域'], answer: 'C', explanation: '均匀平滑无变化的天空区域没有独特信息，不适合作为特征；角点、斑点、高密度纹理是优质特征。' },
+        { id: 68, type: '单选题', question: '对图像做下采样之后直接上采样，得到的图像会（ ）', options: ['A. 和原图完全一致', 'B. 丢失细节，变模糊', 'C. 分辨率高于原图', 'D. 变成二值图像'], answer: 'B', explanation: '下采样会丢弃图像信息，直接上采样无法恢复丢失细节，图像会变模糊。' },
+        { id: 69, type: '单选题', question: 'SIFT算法不具备下面哪一项特性（ ）', options: ['A. 尺度不变', 'B. 旋转不变', 'C. 对光照噪声有较强抵抗能力', 'D. 输出二进制的特征描述符'], answer: 'D', explanation: 'SIFT生成128维浮点特征向量；ORB生成二进制描述符。' },
+        { id: 70, type: '单选题', question: 'FLANN匹配器适合哪一种场景（ ）', options: ['A. 特征点数量很大的大数据集', 'B. 只有很少特征点的小图', 'C. 仅处理二值图像', 'D. 只可以用于ORB算法'], answer: 'A', explanation: 'FLANN快速近似最近邻，大数据集匹配速度优于暴力匹配，代价是匹配精度为近似值。' },
+        { id: 71, type: '单选题', question: '视频分帧操作指的是（ ）', options: ['A. 修改视频编码', 'B. 将视频每一帧保存为独立的图片文件', 'C. 修改视频分辨率', 'D. 截取视频片段'], answer: 'B', explanation: '视频分帧就是逐帧读取视频，把每一帧保存为图像文件。' },
+        { id: 72, type: '单选题', question: 'OpenCV中用来读取摄像头或者本地视频文件的类是（ ）', options: ['A. cv2.VideoWriter', 'B. cv2.VideoCapture', 'C. cv2.CaptureVideo', 'D. cv2.ReadVideo'], answer: 'B', explanation: 'cv2.VideoCapture用于打开摄像头设备或者读取本地视频文件。' },
+        { id: 73, type: '单选题', question: '构成视频的最基本单元是（ ）', options: ['A. 像素', 'B. 帧', 'C. 通道', 'D. 字节'], answer: 'B', explanation: '视频由一序列图像构成，每一幅图像称为一帧，帧是视频的最基本处理单元。' },
+        { id: 74, type: '单选题', question: '使用完VideoWriter之后不调用release()会出现的问题是（ ）', options: ['A. 程序运行速度变快', 'B. 视频文件保存不完整、文件损坏', 'C. 自动删除原视频', 'D. 自动降低视频帧率'], answer: 'B', explanation: '不执行release()，缓存帧无法全部写入，视频文件损坏，同时发生资源泄漏。' },
+        { id: 75, type: '单选题', question: '判断摄像头或者视频文件是否成功打开，调用的方法是（ ）', options: ['A. read()', 'B. release()', 'C. isOpened()', 'D. get()'], answer: 'C', explanation: 'isOpened()返回布尔值，True代表打开成功，False代表打开失败。' },
+        { id: 76, type: '单选题', question: 'cv2.VideoCapture(0)中参数0代表的含义是（ ）', options: ['A. 读取本地0号视频文件', 'B. 打开计算机第1个（内置）摄像头', 'C. 设置视频帧率为0', 'D. 设置视频起始帧为第0帧'], answer: 'B', explanation: '传入数字索引代表摄像头设备编号，0代表本机第一个，一般是内置摄像头。' },
+        { id: 77, type: '单选题', question: 'fourcc编码格式参数的作用是（ ）', options: ['A. 设置视频窗口大小', 'B. 指定视频的压缩编码格式', 'C. 设置视频帧率', 'D. 设置是否彩色'], answer: 'B', explanation: 'fourcc为4字符编码代码，用来指定视频压缩编码格式。' },
+        { id: 78, type: '单选题', question: '想要跳转到视频的第100帧进行读取，应该使用下面哪个方法（ ）', options: ['A. get(cv2.CAP_PROP_POS_FRAMES)', 'B. set(cv2.CAP_PROP_POS_FRAMES, 100)', 'C. get(cv2.CAP_PROP_FRAME_COUNT)', 'D. set(cv2.CAP_PROP_FPS, 100)'], answer: 'B', explanation: 'CAP_PROP_POS_FRAMES代表帧索引，通过set设置数值可以跳转至指定帧。' },
+        { id: 79, type: '单选题', question: 'capture.read()方法返回两个返回值，第一个retval代表（ ）', options: ['A. 读取帧是否成功', 'B. 当前帧图像', 'C. 视频总帧数', 'D. 视频帧率'], answer: 'A', explanation: 'retval, frame = capture.read(); retval为True代表读取帧成功，frame是读到的图像帧。' },
+        { id: 80, type: '单选题', question: 'VideoCapture的get()方法作用是（ ）', options: ['A. 写入视频帧', 'B. 获取视频各类属性参数', 'C. 设置视频属性', 'D. 释放视频资源'], answer: 'B', explanation: 'get(propId)获取视频属性；set()用于设置视频属性。' },
+        { id: 81, type: '单选题', question: 'Eigenfaces特征脸算法是基于哪一种降维算法（ ）', options: ['A. LDA线性判别分析', 'B. PCA主成分分析', 'C. 傅里叶变换', 'D. 小波变换'], answer: 'B', explanation: 'Eigenfaces（特征脸）基于PCA主成分分析做降维。' },
+        { id: 82, type: '单选题', question: 'OpenCV的Haar级联、LBP级联分类器以什么格式文件存储（ ）', options: ['A. jpg', 'B. xml', 'C. txt', 'D. py'], answer: 'B', explanation: '各类级联分类器模型保存为xml文件。' },
+        { id: 83, type: '单选题', question: 'Fisherfaces人脸识别算法基于下面哪项技术（ ）', options: ['A. LDA线性判别分析', 'B. PCA主成分分析', 'C. Haar特征', 'D. LBP特征'], answer: 'A', explanation: 'Fisherfaces基于LDA线性判别分析，目标让同类样本更聚集，不同类样本分得更开。' },
+        { id: 84, type: '单选题', question: '下面不属于人脸检测主流思路的是（ ）', options: ['A. 基于知识规则的方法', 'B. 基于统计模型的方法', 'C. 基于压缩编码的方法', 'D. 基于深度学习的方法'], answer: 'C', explanation: '人脸检测三类思路：基于知识规则、基于统计模型、基于深度学习；图像压缩编码和人脸检测无关。' },
+        { id: 85, type: '单选题', question: 'LBPH人脸识别技术主要依靠什么信息来识别人脸（ ）', options: ['A. 人脸色彩信息', 'B. 人脸局部纹理特征', 'C. 人脸图像文件大小', 'D. 人脸图片分辨率'], answer: 'B', explanation: 'LBPH局部二值模式直方图，依靠人脸局部纹理特征完成识别。' },
+        { id: 86, type: '单选题', question: 'OpenCV中加载级联分类器所使用的类是（ ）', options: ['A. cv2.CascadeClassifier', 'B. cv2.LBPHFaceRecognizer', 'C. cv2.VideoCapture', 'D. cv2.SIFT'], answer: 'A', explanation: 'cv2.CascadeClassifier用来加载xml级联分类器文件。' },
+        { id: 87, type: '单选题', question: '级联分类器的核心工作原理是（ ）', options: ['A. 暴力全图遍历每一个像素做复杂运算', 'B. 多级分类器串联，逐级筛除不符合条件样本', 'C. 只对图像中心区域做检测', 'D. 只处理彩色图像，不处理灰度图'], answer: 'B', explanation: '级联分类器采用排除法，多个分类器串联；简单条件先过滤大量负样本，逐步筛选得到正样本。' },
+        { id: 88, type: '单选题', question: 'Haar特征的计算方式为（ ）', options: ['A. 黑色区域像素和-白色区域像素和', 'B. 白色矩形像素之和-黑色矩形像素之和', 'C. 所有区域像素直接求平均值', 'D. 取区域像素的中值'], answer: 'B', explanation: 'Haar特征值 = 白色矩形区域像素之和 - 黑色矩形区域像素之和。' },
+        { id: 89, type: '单选题', question: 'detectMultiScale的minNeighbors参数设置过大，会出现（ ）', options: ['A. 大量误检，很多非人脸被识别人脸', 'B. 检测条件变严格，容易发生漏检真实人脸', 'C. 检测速度大幅变快', 'D. 只能检测很小的人脸'], answer: 'B', explanation: 'minNeighbors越大筛选条件越严格，误检变少，但容易漏掉真实人脸；过小会产生大量误检。' },
+        { id: 90, type: '单选题', question: 'detectMultiScale方法进行检测，推荐传入什么类型图像效果更好（ ）', options: ['A. 彩色BGR图像', 'B. 灰度图像', 'C. 二值图像', 'D. HSV图像'], answer: 'B', explanation: 'detectMultiScale对灰度图像检测效果更佳。' },
+
+        // ---------- 填空题 91-144 ----------
+        { id: 91, type: '填空题', question: '______学科通过线、曲面等几何基元生成图像，和计算机视觉任务方向相反。', options: [], answer: '计算机图形学', explanation: '计算机图形学使用几何元素生成图像；计算机视觉从图像理解现实物体。' },
+        { id: 92, type: '填空题', question: '计算机视觉任务中，______任务用来预测视频序列中目标后续的位置与移动尺度。', options: [], answer: '目标跟踪', explanation: '目标跟踪基于目标初始位置，预测后续帧目标位置，输出物体运动轨迹。' },
+        { id: 93, type: '填空题', question: '计算机视觉中，______任务判断整张图像的所属类别，解决“是什么”的问题。', options: [], answer: '图像分类', explanation: '图像分类给整张图像分配类别标签，回答图像内容是什么。' },
+        { id: 94, type: '填空题', question: '______学科主要研究分类问题，研究不同对象之间的共有区分特征。', options: [], answer: '模式识别', explanation: '模式识别是计算机视觉的相关学科，核心是完成对象的分类判别。' },
+        { id: 95, type: '填空题', question: '图像分割分为语义分割和______分割。', options: [], answer: '实例', explanation: '实例分割能够区分同一类别下不同的物体实例。' },
+        { id: 96, type: '填空题', question: '计算机视觉任务中，______任务解决“是什么，在哪里”的问题。', options: [], answer: '目标检测', explanation: '目标检测同时完成物体类别识别与物体位置定位。' },
+        { id: 97, type: '填空题', question: '图像数字化两个关键步骤：采样和______。', options: [], answer: '量化', explanation: '模拟图像转数字图像，分为采样（空间离散）、量化（灰度离散）。' },
+        { id: 98, type: '填空题', question: 'cv2.getRotationMatrix2D得到旋转矩阵，angle参数为正数代表______时针旋转。', options: [], answer: '逆', explanation: 'angle>0逆时针旋转；angle<0顺时针旋转。' },
+        { id: 99, type: '填空题', question: '仿射变换会保留图形的平直性以及线段之间的______特性。', options: [], answer: '平行', explanation: '仿射变换保持直线平直、线段互相平行、线段长度比例不变。' },
+        { id: 100, type: '填空题', question: '在图像平移操作中，若x方向平移参数为负数，图像会向______侧移动。', options: [], answer: '左', explanation: '平移变换tx为负向左移动，tx为正向右移动；ty为负向上，ty为正向下。' },
+        { id: 101, type: '填空题', question: 'cv2.waitKey()返回按键的______码。', options: [], answer: 'ASCII', explanation: 'waitKey捕获按键，返回按键对应的ASCII码。' },
+        { id: 102, type: '填空题', question: '图像对象的______属性，可以返回图像行数、列数、通道数。', options: [], answer: 'shape', explanation: 'shape返回图像维度信息，彩色图像（行，列，通道），灰度图像（行，列）。' },
+        { id: 103, type: '填空题', question: 'HSV色彩空间三个分量分别是色调H、饱和度S、______。', options: [], answer: '亮度V', explanation: 'H色调，S饱和度，V亮度。' },
+        { id: 104, type: '填空题', question: '掩模图像中，像素值为______代表该区域允许参与图像处理。', options: [], answer: '255', explanation: '掩模规则，255白色为有效处理区域，0黑色代表被遮挡区域。' },
+        { id: 105, type: '填空题', question: '通道拆分得到单通道图像，想要显示彩色效果，需要把另外两个通道全部填充为______再合并。', options: [], answer: '0', explanation: '其余通道置0，再执行通道合并，就可以看到该通道对应的彩色。' },
+        { id: 106, type: '填空题', question: '色彩分割、抠图处理时，一般会将BGR图像转换为______色彩空间。', options: [], answer: 'HSV', explanation: 'HSV更适合根据颜色进行分割提取目标物体。' },
+        { id: 107, type: '填空题', question: '使用inRange函数做颜色筛选，输出的是一张______图像，只有0和255两种像素值。', options: [], answer: '二值', explanation: 'inRange输出二值掩模图像，满足条件为255，不满足条件为0。' },
+        { id: 108, type: '填空题', question: '灰度图像属于______通道图像，只记录亮度信息。', options: [], answer: '单', explanation: '灰度图像只有一个通道，没有彩色信息。' },
+        { id: 109, type: '填空题', question: '______可以把原始图像直方图变换成近似均匀分布，以此增强图像对比度。', options: [], answer: '直方图均衡化', explanation: '直方图均衡化是经典图像对比度增强手段。' },
+        { id: 110, type: '填空题', question: '中值滤波的卷积核大小参数ksize必须为______。', options: [], answer: '正奇数', explanation: '保证存在唯一中心像素点，用于邻域选取。' },
+        { id: 111, type: '填空题', question: '中值滤波需要对邻域像素灰度进行______，选取序列中间的值为输出。', options: [], answer: '排序', explanation: '先排序，再取中值，是中值滤波的核心步骤。' },
+        { id: 112, type: '填空题', question: '高斯滤波的卷积核，越靠近模板______位置权重数值越大。', options: [], answer: '中心', explanation: '高斯权重由中心向四周逐步衰减。' },
+        { id: 113, type: '填空题', question: '图像滤波的主要运算方式为______运算，依靠滤波模板在图像上滑动计算。', options: [], answer: '卷积', explanation: '卷积运算是图像平滑滤波的基础运算。' },
+        { id: 114, type: '填空题', question: '______滤波同时参考像素空间距离与色彩差异，降噪同时保护边缘。', options: [], answer: '双边', explanation: '双边滤波兼顾空间距离与色彩相似度，保护边缘信息。' },
+        { id: 115, type: '填空题', question: '图像梯度的本质是图像灰度变化的速度，数学上相当于对图像灰度做______运算。', options: [], answer: '求导', explanation: '梯度就是灰度的导数，一阶导数对应Sobel，二阶导数对应Laplacian。' },
+        { id: 116, type: '填空题', question: '霍夫直线变换输入必须是8位单通道的______图像。', options: [], answer: '二值', explanation: '一般来自Canny边缘检测结果。' },
+        { id: 117, type: '填空题', question: 'Canny边缘检测算法中，______操作可以把较宽的边缘压缩细化为单像素线条。', options: [], answer: '非极大值抑制', explanation: '非极大值抑制只保留梯度方向局部最大值，实现边缘细化。' },
+        { id: 118, type: '填空题', question: '霍夫变换将图像空间的几何形状映射到______空间，寻找峰值完成图形检测。', options: [], answer: '霍夫参数', explanation: '点映射到参数空间，交点峰值对应图像中的直线或者圆形。' },
+        { id: 119, type: '填空题', question: '轮廓参数模式RETR_EXTERNAL，代表只查找图像的______轮廓。', options: [], answer: '最外层', explanation: '忽略内部嵌套子轮廓，仅仅提取最外层物体边界。' },
+        { id: 120, type: '填空题', question: '为了保存负梯度信息，Sobel运算输出图像深度一般设置为______。', options: [], answer: 'cv2.CV_64F', explanation: '使用64位浮点数保存正负梯度，避免负数直接截断丢失边缘信息。' },
+        { id: 121, type: '填空题', question: '______运算会让二值图像前景物体向外扩张，填补细小空隙。', options: [], answer: '膨胀', explanation: '膨胀扩大前景边界，可以连接距离较近的断开区域。' },
+        { id: 122, type: '填空题', question: '______运算会让二值图像前景物体向内收缩，消融物体边界。', options: [], answer: '腐蚀', explanation: '腐蚀使物体收缩，过小的前景对象会直接消失。' },
+        { id: 123, type: '填空题', question: '形态学运算中，用于扫描图像的小像素集合称为______。', options: [], answer: '结构元素', explanation: '结构元素是腐蚀、膨胀运算的基础，相当于形态学的“模板”。' },
+        { id: 124, type: '填空题', question: '形态学______运算等于膨胀图像减去腐蚀图像，可以提取物体边缘。', options: [], answer: '梯度', explanation: '梯度运算输出物体轮廓边缘。' },
+        { id: 125, type: '填空题', question: '光照不均匀的图像，不适合全局阈值，适合使用______阈值处理。', options: [], answer: '自适应', explanation: '自适应阈值分局部计算阈值，解决整张图明暗不一致的分割难题。' },
+        { id: 126, type: '填空题', question: '自适应阈值处理的blockSize参数必须为______（“奇”/“偶”）数。', options: [], answer: '奇', explanation: '必须奇数，保证邻域窗口拥有中心像素。' },
+        { id: 127, type: '填空题', question: 'DMatch对象的distance属性数值越小，代表特征点匹配相似度越______。', options: [], answer: '高', explanation: 'distance为特征向量之间距离，数值越小相似度越高。' },
+        { id: 128, type: '填空题', question: '图像拼接时，通过特征匹配得到对应点，再执行______变换，把一张图像投影对齐到另一张图像。', options: [], answer: '透视', explanation: '透视变换完成图像投影对齐，之后再做融合得到全景图。' },
+        { id: 129, type: '填空题', question: '高斯金字塔下采样操作，先做高斯滤波，再删除图像的______行和列。', options: [], answer: '偶数', explanation: '删除偶数行列，图像宽高变为原来1/2。' },
+        { id: 130, type: '填空题', question: 'KNN匹配比值筛选，当最近距离与次近距离比值______设定阈值，保留该匹配对。', options: [], answer: '小于', explanation: '比值小于阈值，代表匹配可靠，过滤容易混淆的误匹配。' },
+        { id: 131, type: '填空题', question: 'ORB使用______算法生成二进制的特征描述符。', options: [], answer: 'BRIEF', explanation: 'BRIEF比对像素对生成二进制描述。' },
+        { id: 132, type: '填空题', question: '______算法可以从大量匹配点中删除误匹配外点，求解单应矩阵。', options: [], answer: 'RANSAC（随机抽样一致性）', explanation: 'RANSAC随机抽样一致性算法，处理包含噪声的匹配点集。' },
+        { id: 133, type: '填空题', question: 'cv2.VideoCapture(______)，填入数字打开电脑内置第一个摄像头。', options: [], answer: '0', explanation: '设备索引0对应本机第一个摄像头。' },
+        { id: 134, type: '填空题', question: '视频的最小处理单元是______。', options: [], answer: '帧', explanation: '视频由连续的一帧一帧图像构成。' },
+        { id: 135, type: '填空题', question: 'fourcc用来指定视频的______格式，由4个字符代码组成。', options: [], answer: '编码', explanation: '不同fourcc对应不同压缩编码。' },
+        { id: 136, type: '填空题', question: 'VideoWriter创建时，isColor参数设置为False，输出______视频。', options: [], answer: '灰度（黑白）', explanation: 'False不保存彩色，输出灰度视频。' },
+        { id: 137, type: '填空题', question: '当VideoWriter写入帧图像尺寸与初始化设置的frameSize不一致时，输出的视频会发生______。', options: [], answer: '异常（损坏）', explanation: '写入帧分辨率必须与构造时设置的frameSize匹配，否则保存视频异常无法正常播放。' },
+        { id: 138, type: '填空题', question: '调用read()读取视频帧，返回的第一个变量retval代表帧是否______。', options: [], answer: '读取成功', explanation: 'True读取成功，False读取失败或者到达视频末尾。' },
+        { id: 139, type: '填空题', question: 'LBPH人脸识别全称为局部二值模式______。', options: [], answer: '直方图', explanation: 'Local Binary Patterns Histograms。' },
+        { id: 140, type: '填空题', question: '训练人脸识别器时，labels参数是整型______，要和训练人脸图像数量一一对应。', options: [], answer: '标签数组', explanation: 'labels数组存储每张训练人脸对应的身份编号标签。' },
+        { id: 141, type: '填空题', question: '在二分类任务中，______样本指符合目标类别特征的数据实例。', options: [], answer: '正', explanation: '正样本是符合目标(如人脸)；负样本是不符合目标的数据。' },
+        { id: 142, type: '填空题', question: '级联分类器的核心原理是______法，多级分类器串联逐级筛除负样本。', options: [], answer: '排除', explanation: '从简单条件开始，逐步过滤掉不是目标的区域。' },
+        { id: 143, type: '填空题', question: 'Fisherfaces人脸识别算法基于______线性判别分析。', options: [], answer: 'LDA', explanation: 'LDA线性判别分析，优化类内、类间距离。' },
+        { id: 144, type: '填空题', question: 'Eigenfaces特征脸算法是基于______主成分分析实现降维。', options: [], answer: 'PCA', explanation: 'PCA主成分分析，把人脸高维数据降维。' },
+
+        // ---------- 判断题 145-198 ----------
+        { id: 145, type: '判断题', question: '图像处理的工作目标主要是改善图像的视觉效果。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '图像处理是对图像做加工调整，改善图像视觉效果，是计算机视觉的相关学科。' },
+        { id: 146, type: '判断题', question: '深度学习做计算机视觉，需要人工手动全部设计图像特征。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: '深度学习可以由神经网络自动学习特征，不需要专家手动设计全部特征。' },
+        { id: 147, type: '判断题', question: '图像分类任务需要输出物体在图片中的坐标位置。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: '图像分类只判断图像类别；输出类别+位置属于目标检测任务。' },
+        { id: 148, type: '判断题', question: '实例分割可以区分属于同一类别的不同物体个体。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '语义分割只区分类别；实例分割可以区分同一类别下不同实例对象。' },
+        { id: 149, type: '判断题', question: '计算机视觉本质就是用计算机模拟人的视觉功能，对图像信息进行提取、处理与理解。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '计算机视觉模拟人眼视觉，完成图像识别、跟踪、测量等一系列任务。' },
+        { id: 150, type: '判断题', question: '人工智能技术目标是让机器实现识别、认知、分析和决策等类人能力。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '人工智能希望机器拥有类似人类的智力，完成识别、分析、决策等工作。' },
+        { id: 151, type: '判断题', question: '灰度图像的shape属性返回包含行数、列数、通道数三个元素的元组。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: '灰度图像通道数为1，shape只返回（行数，列数）两个值。' },
+        { id: 152, type: '判断题', question: 'cv2.flip(img, -1)可以同时完成x轴和y轴两个方向的翻转。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: 'flipCode传入负数，图像同时沿x轴、y轴翻转。' },
+        { id: 153, type: '判断题', question: '采样操作是把图像灰度值由连续值转换为离散整数。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: '采样处理空间位置，量化才负责将连续灰度转为离散整数值。' },
+        { id: 154, type: '判断题', question: 'cv2.resize缩放图像时，fx、fy代表水平、垂直方向缩放比例。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: 'fx水平缩放比例，fy垂直缩放比例，可以不指定dsize直接使用比例缩放。' },
+        { id: 155, type: '判断题', question: '模拟图像是二维空间上连续变化的图像，计算机无法直接处理模拟图像。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '计算机只能处理数字图像，模拟图像需要经过采样、量化数字化之后才能处理。' },
+        { id: 156, type: '判断题', question: '平移变换tx为负数代表图像向右移动。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: 'tx正数向右移动；tx负数图像向左移动；ty正数向下，负数向上。' },
+        { id: 157, type: '判断题', question: '两幅图像做加权加法运算，两幅图像的尺寸和通道数可以不相同。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: '图像加法、加权加法运算，要求输入两张图像尺寸、通道数必须保持一致。' },
+        { id: 158, type: '判断题', question: 'numpy加号做图像像素相加，像素和超过255时直接截断为255。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: 'numpy“+”执行取模；cv2.add函数才会将超过255的值截断为255。' },
+        { id: 159, type: '判断题', question: '通道拆分得到单通道图像，直接显示就可以看到对应的彩色效果。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: '单通道只能显示灰度；想要看彩色，需要将另外两个通道置0再合并。' },
+        { id: 160, type: '判断题', question: 'HSV色彩空间相比BGR，更加适合做颜色筛选与色彩分割。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: 'HSV用色调、饱和度、亮度描述颜色，更符合人对颜色的感知。' },
+        { id: 161, type: '判断题', question: 'BGR色彩空间非常适合直接用来做颜色分割，不需要转为HSV。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: 'BGR受亮度影响大，不方便筛选颜色，一般转为HSV做色彩分割。' },
+        { id: 162, type: '判断题', question: '灰度图像转换回BGR彩色图像时，R、G、B三个通道数值全部相等。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '灰度转移色，三个通道取值完全一样，依旧呈现灰度视觉效果。' },
+        { id: 163, type: '判断题', question: '灰度直方图纵坐标代表各个灰度级对应的像素个数。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '直方图x轴灰度级别，y轴统计该灰度出现的像素数量。' },
+        { id: 164, type: '判断题', question: '中值滤波卷积核可以设置为4，4属于合法的ksize参数。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: '中值滤波ksize必须是正奇数，4是偶数不合法。' },
+        { id: 165, type: '判断题', question: '直方图均衡化可以用来提升图像的对比度。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '均衡化重新映射灰度，拓展灰度动态范围，实现对比度增强。' },
+        { id: 166, type: '判断题', question: '直方图可以直接看出图像中每一个像素的坐标位置。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: '直方图只统计灰度频次，不存储像素的空间位置信息。' },
+        { id: 167, type: '判断题', question: '中值滤波处理邻域像素时，需要先把像素灰度值排序，选取中间值作为输出。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '中值滤波将邻域灰度排序，取序列中间灰度作为输出像素值。' },
+        { id: 168, type: '判断题', question: '高斯滤波核越靠近边缘位置，权重数值越大。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: '高斯滤波中心权重最大，向四周逐步变小。' },
+        { id: 169, type: '判断题', question: 'Canny边缘检测中阈值设置越大，检测出来的边缘数量会越少。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '高阈值越大，条件越严苛，只有很强的突变才判定为边缘，检出边缘变少。' },
+        { id: 170, type: '判断题', question: 'Sobel算子可以同时直接计算x方向与y方向梯度，不需要分开求导。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: 'Sobel算子需要dx、dy分开设置，分别计算x、y方向梯度，之后再合并结果。' },
+        { id: 171, type: '判断题', question: '霍夫变换对存在断裂、有噪声的直线也有较好检测效果。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '霍夫变换统计参数空间峰值，直线局部断裂也可以检测完整直线。' },
+        { id: 172, type: '判断题', question: '霍夫直线变换阈值设置太低，容易将噪声误识别为直线。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: 'threshold阈值过小，累加器轻微峰值就判定直线，噪声点会产生虚假直线检测结果。' },
+        { id: 173, type: '判断题', question: 'Canny算法的非极大值抑制目的是把粗的边缘线条细化为单像素宽度边缘。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '非极大值抑制，只保留梯度方向上局部最大值，实现边缘线条细化。' },
+        { id: 174, type: '判断题', question: 'Laplacian算子具备旋转不变性，可以检测各个方向的边缘。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '拉普拉斯二阶算子，不用区分x、y方向，对各个角度边缘都可以检测。' },
+        { id: 175, type: '判断题', question: '形态学梯度运算可以提取二值图像物体的边缘轮廓。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '膨胀减腐蚀得到物体边缘，是获取轮廓的一种形态学手段。' },
+        { id: 176, type: '判断题', question: '自适应阈值处理可以为图像每一个局部区域计算不同的分割阈值。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '自适应阈值不使用全局统一阈值，每个像素依据周边邻域计算局部阈值。' },
+        { id: 177, type: '判断题', question: '自适应阈值处理中，邻域窗口blockSize可以设置为偶数，不影响运算。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: 'blockSize必须是奇数，保证窗口存在中心像素，偶数会报错。' },
+        { id: 178, type: '判断题', question: '腐蚀运算迭代次数越大，前景物体收缩效果越明显。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: 'iterations代表重复腐蚀多少次，次数越多物体收缩越厉害。' },
+        { id: 179, type: '判断题', question: '阈值处理只能把像素处理成0和255，不能设置其他中间灰度值。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: '阈值处理可以把像素划分成0-255之间任意两组灰度，不一定只能是0与255。' },
+        { id: 180, type: '判断题', question: 'Otsu阈值处理不需要人为手动指定分割阈值，算法自动计算最优阈值。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: 'Otsu算法基于直方图自动求取阈值，调用时thresh参数填0。' },
+        { id: 181, type: '判断题', question: '暴力匹配算法会把查询图像每一个特征向量，和训练图像全部特征向量逐一比对。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: 'BF暴力匹配原理：遍历全部特征向量计算距离，选出距离最小的作为匹配。' },
+        { id: 182, type: '判断题', question: 'SIFT算法可以实现尺度不变，旋转不变，抗光照干扰。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: 'SIFT通过高斯差分金字塔实现尺度不变，给关键点分配方向实现旋转不变。' },
+        { id: 183, type: '判断题', question: '拉普拉斯金字塔记录图像下采样时丢失的细节信息，可用于还原高分辨率图像。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '拉普拉斯金字塔保存差值细节，配合高斯金字塔可以恢复原始图像。' },
+        { id: 184, type: '判断题', question: 'ORB算法输出的是二进制特征描述符，计算、匹配速度很快。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: 'ORB基于FAST+BRIEF，二进制描述子占用存储空间小，适合实时场景。' },
+        { id: 185, type: '判断题', question: '图像特征需要具备独特性，在不同尺度下能够被重复检测出来。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '好的图像特征要有可重复性、独特区分能力，缩放旋转条件下依然可以检出。' },
+        { id: 186, type: '判断题', question: 'DMatch对象中distance属性数值越大，代表两组特征点匹配质量越好。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: 'distance代表特征向量之间距离，数值越小，相似度越高，匹配质量越好。' },
+        { id: 187, type: '判断题', question: 'cv2.VideoCapture既可以读取本地视频文件，也可以读取摄像头实时画面。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '传入文件路径读取本地视频；传入数字索引打开摄像头设备。' },
+        { id: 188, type: '判断题', question: 'VideoWriter的write()方法一次只能写入一帧图像。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: 'write接收单帧图像，循环调用实现连续视频写入。' },
+        { id: 189, type: '判断题', question: 'cv2.VideoCapture读取视频时，waitKey(1)代表窗口等待1秒。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: 'waitKey的单位是毫秒，播放视频一般设置很短等待时间。' },
+        { id: 190, type: '判断题', question: '视频处理本质就是对视频中每一帧图像做图像处理。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '视频由帧序列组成，OpenCV处理视频就是循环读取每一帧图像再处理。' },
+        { id: 191, type: '判断题', question: 'get()方法可以获取视频属性，set()方法一定可以修改全部视频属性。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: '部分属性（如原视频编码格式）不支持set修改，设置会返回False。' },
+        { id: 192, type: '判断题', question: '如果写入VideoWriter的图像帧尺寸，和构造时设置的frameSize不一致，保存视频会异常。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '写入帧的宽高必须与VideoWriter初始化设置的frameSize匹配。' },
+        { id: 193, type: '判断题', question: 'LBPH人脸识别会将人脸图像分块，每个子块统计LBP直方图，保留纹理的空间信息。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '人脸分多个子区域，分别统计直方图，保留纹理所在位置信息。' },
+        { id: 194, type: '判断题', question: '级联分类器使用排除法，先过滤大量明显不是目标的区域，减少计算量。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: '简单分类器先筛除大量负样本，后面再做精细判断，提升检测速度。' },
+        { id: 195, type: '判断题', question: 'Eigenfaces特征脸算法使用LDA线性判别分析进行降维。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: 'Eigenfaces基于PCA；Fisherfaces才是基于LDA。' },
+        { id: 196, type: '判断题', question: 'Haar特征可以描述人脸灰度的明暗对比关系，例如眼睛区域比脸颊更暗。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: 'Haar特征依靠黑白矩形计算灰度差，捕捉人脸五官明暗变化。' },
+        { id: 197, type: '判断题', question: 'detectMultiScale()函数人脸检测时，minNeighbors参数设置越小，越容易产生误检测，把非人脸当作人脸。', options: ['A. 对', 'B. 错'], answer: 'A', explanation: 'minNeighbors越小判定条件宽松，误检增多；条件严格则容易漏检。' },
+        { id: 198, type: '判断题', question: '匹配距离数值confidence越大，说明待识别人脸和训练样本相似度越高。', options: ['A. 对', 'B. 错'], answer: 'B', explanation: 'confidence是距离值，数值越小代表相似度越高。' },
+
+        // ---------- 简答题 199-206 (简化展示，答案完整) ----------
+        { id: 199, type: '简答题', question: '简述高斯金字塔与拉普拉斯金字塔的构建思路，说明下采样之后直接上采样为什么不能恢复原始图像。', options: [], answer: '高斯金字塔通过高斯滤波加下采样构建，层级越高图像分辨率越小。拉普拉斯金字塔每一层等于高斯金字塔对应层减去上一层高斯图像的上采样结果，保存下采样丢失的细节信息。下采样会丢弃部分像素信息，直接上采样只能插值补全像素，无法还原丢失的细节，因此不能恢复原图；借助拉普拉斯金字塔保存的差值信息才可以复原图像。', explanation: '答案已包含核心要点，可展开记忆。' },
+        { id: 200, type: '简答题', question: '简述Otsu阈值处理的原理，以及它适合和不适合的图像场景。', options: [], answer: 'Otsu阈值处理也叫最大类间方差法。算法自动遍历寻找最佳阈值，使前景、背景的类内方差最小，类间方差最大，无需人工指定阈值。适合灰度直方图呈双峰，前景与背景灰度区分明显的图像；不适合直方图没有双峰、光照复杂、前景背景灰度重叠严重的图像。', explanation: '核心：类间方差最大；适用：双峰直方图；不适用：单峰/多峰/光照复杂。' },
+        { id: 201, type: '简答题', question: '简述中值滤波的原理，它适合处理什么噪声，为什么中值滤波的卷积核ksize必须为正奇数？', options: [], answer: '中值滤波将邻域内像素灰度排序，取中间值作为输出像素值。它非常适合去除椒盐噪声。卷积核必须是正奇数，是为了滤波窗口存在明确的中心像素点，方便选取邻域并获取排序后的中间灰度值，保证滤波运算正常执行。', explanation: '排序取中值；去椒盐噪声；奇数保证中心像素。' },
+        { id: 202, type: '简答题', question: '简述HSV色彩空间H、S、V三个分量的含义，以及OpenCV中各分量的取值范围。', options: [], answer: 'HSV包含色调H、饱和度S、亮度V三个分量。（1）H代表色调，表示色彩的基本属性，用来区分红、蓝、黄等颜色；（2）S为饱和度，表示色彩的纯度；（3）V是亮度，表示人眼感受到的光线明暗程度。在OpenCV中，H取值范围0-180，S取值范围0-255，V取值范围0-255。', explanation: 'H色调0-180；S饱和度0-255；V亮度0-255。' },
+        { id: 203, type: '简答题', question: '简述Canny边缘检测算法的四个主要步骤，并说明高低双阈值的判定规则。', options: [], answer: '第一步使用高斯滤波对图像降噪；第二步计算图像每个像素的梯度幅值与方向；第三步对梯度幅值做非极大值抑制，细化边缘；第四步采用高低双阈值完成滞后阈值检测。判定规则：梯度大于高阈值为强边缘；小于低阈值判定为非边缘；介于两阈值之间时，和强边缘连通则为弱边缘，不连通则舍弃。', explanation: '四步：高斯滤波→计算梯度→非极大值抑制→双阈值检测。' },
+        { id: 204, type: '简答题', question: '简述Haar级联分类器的核心思想，什么是正样本与负样本。', options: [], answer: 'Haar级联分类器采用排除法的思想，将多个简单分类器串联，层层筛选，快速排除不是目标的区域，留下符合条件的目标。正样本是属于待检测目标的样本，比如人脸检测任务里的人脸图像；负样本是不属于待检测目标的样本，也就是非人脸的图像。', explanation: '排除法逐级筛选；正样本=目标，负样本=非目标。' },
+        { id: 205, type: '简答题', question: '什么是视频分帧，简述视频分帧的作用。', options: [], answer: '视频分帧就是把完整的视频文件拆解，将视频里面每一帧图像单独保存为一张张图片。视频分帧可以把动态视频转化为静态图像数据集；方便对视频内关键画面做查看、截取；可以针对单张图片做图像算法处理，完成目标识别、计数等任务，为后续计算机视觉处理提供数据基础。', explanation: '视频拆成单帧图片；便于后续图像处理与分析。' },
+        { id: 206, type: '简答题', question: '简述图像数字化包含哪两个环节，并分别说明其作用。', options: [], answer: '图像数字化分为采样和量化两个环节。采样是把空间上连续的模拟图像转换为离散像素点的过程，完成空间维度的离散化。量化是将采样得到的连续灰度值转换成离散整数值。量化等级越高，图像信息越丰富、画质越好，但数据量更大。经过采样与量化后模拟图像就转变为计算机可处理的数字图像。', explanation: '采样：空间离散；量化：灰度离散。' },
+
+        // ---------- 编程题 207-210 (简化展示，保留完整题干与答案) ----------
+        { id: 207, type: '编程题', question: '现有一张apple.jpg苹果彩色图片，苹果主体为红色，背景为绿色树叶，请基于HSV色彩空间完成红色苹果的色彩分割，按照下面要求编写Python+OpenCV程序：\n（1）读取图像，显示原始BGR图像；\n（2）将BGR图像转换为HSV色彩空间；参考颜色表：红色H范围：0-10，S：43-255，V：46-255；\n（3）使用cv2.inRange()生成红色苹果的二值掩模mask，显示掩模图像；\n（4）利用按位与运算+掩模，把原图中红色苹果提取出来，背景置黑色，显示提取后的苹果图像；\n（5）按键任意键关闭全部窗口。', options: [], answer: '```python\nimport cv2\nimport numpy as np\n\nimg = cv2.imread("apple.jpg")\ncv2.imshow("Original", img)\n\nhsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)\nlower_red = np.array([0, 43, 46])\nupper_red = np.array([10, 255, 255])\nmask = cv2.inRange(hsv_img, lower_red, upper_red)\ncv2.imshow("RedMask", mask)\n\napple_foreground = cv2.bitwise_and(img, img, mask=mask)\ncv2.imshow("Apple_Foreground", apple_foreground)\n\ncv2.waitKey(0)\ncv2.destroyAllWindows()\n```', explanation: '使用HSV范围提取红色，inRange生成mask，bitwise_and提取前景。' },
+        { id: 208, type: '编程题', question: '现有图片shape.png，图片中包含多个封闭几何图形，请编写Python+OpenCV程序完成下面任务：\n（1）读取彩色原始图像；\n（2）将彩色图像转换为灰度图像，使用(5,5)的卷积核进行高斯滤波降噪；\n（3）对滤波之后的图像执行Canny边缘检测，低阈值70，高阈值200；\n（4）调用轮廓查找函数，只查找图像最外层轮廓，轮廓近似方法采用cv2.CHAIN_APPROX_SIMPLE；\n（5）复制原始图像，在复制的图像上使用黄色(0,255,255)、线宽2绘制出全部检测到的轮廓；\n（6）依次显示灰度图像、Canny边缘检测图像、绘制完轮廓的结果图像；\n（7）按任意按键关闭全部OpenCV窗口。', options: [], answer: '```python\nimport cv2\n\nimg = cv2.imread("shape.png")\ngray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\ncv2.imshow("GrayWin", gray)\n\nblur_img = cv2.GaussianBlur(gray, (5, 5), 1)\ncanny_img = cv2.Canny(blur_img, 70, 200)\ncv2.imshow("CannyWin", canny_img)\n\ncontours, hierarchy = cv2.findContours(canny_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)\ndraw_img = img.copy()\ncv2.drawContours(draw_img, contours, -1, (0, 255, 255), 2)\ncv2.imshow("ContourWin", draw_img)\n\ncv2.waitKey(0)\ncv2.destroyAllWindows()\n```', explanation: '高斯滤波→Canny→findContours→drawContours。' },
+        { id: 209, type: '编程题', question: '现有一张带椒盐噪声的图片noise_cat.jpg，请编写Python+OpenCV程序完成下面任务：\n（1）读取噪声彩色图片，显示原始噪声图像；\n（2）直接对彩色原图分别做：均值滤波、高斯滤波、中值滤波；均值滤波核大小(5,5)；高斯滤波核大小(5,5)，sigmaX=2；中值滤波核大小5；\n（3）分别显示均值滤波、高斯滤波、中值滤波处理之后的彩色结果图像；\n（4）将原始彩色图像转为灰度图，提取灰度图的直方图；把中值滤波得到的彩色结果转为灰度，提取它的直方图；在同一张画布绘制两条直方图曲线做对比；\n（5）按任意键关闭全部窗口。', options: [], answer: '```python\nimport cv2\nimport matplotlib.pyplot as plt\n\nimg = cv2.imread("noise_cat.jpg")\ncv2.imshow("Original", img)\n\nmean_blur = cv2.blur(img, (5, 5))\ngauss_blur = cv2.GaussianBlur(img, (5, 5), 2)\nmedian_blur = cv2.medianBlur(img, 5)\n\ncv2.imshow("MeanBlur", mean_blur)\ncv2.imshow("GaussianBlur", gauss_blur)\ncv2.imshow("MedianBlur", median_blur)\n\ngray_origin = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\ngray_med = cv2.cvtColor(median_blur, cv2.COLOR_BGR2GRAY)\nhist_gray = cv2.calcHist([gray_origin], [0], None, [256], [0, 255])\nhist_med = cv2.calcHist([gray_med], [0], None, [256], [0, 255])\nplt.plot(hist_gray)\nplt.plot(hist_med)\nplt.show()\n\ncv2.waitKey(0)\ncv2.destroyAllWindows()\n```', explanation: '三种滤波对比；直方图用calcHist+matplotlib绘制。' },
+        { id: 210, type: '编程题', question: '现有图像stone.png，画面中有若干石块目标，背景散布很多细小白色噪点。请编写Python+OpenCV完成以下任务：\n（1）读取彩色原始图像；\n（2）将彩色图像转为灰度图像，显示灰度窗口；\n（3）使用Otsu自动阈值做二值化处理THRESH_BINARY + THRESH_OTSU，显示Otsu二值图；\n（4）构建(3,3)矩形结构元素，对二值图像执行开运算，消除背景细小噪点，显示开运算处理后的图像；\n（5）查找图像最外层轮廓，轮廓近似方法选用cv2.CHAIN_APPROX_SIMPLE；\n（6）打印输出检测到的石块总个数；\n（7）按任意键关闭全部OpenCV窗口。', options: [], answer: '```python\nimport cv2\n\nimg = cv2.imread("stone.png")\ngray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\ncv2.imshow("GrayWin", gray)\n\nret, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)\ncv2.imshow("OtsuBinWin", binary)\n\nkernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))\nopen_result = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)\ncv2.imshow("OpenWin", open_result)\n\ncontours, hierarchy = cv2.findContours(open_result, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)\nprint("检测到石块数量：", len(contours))\n\ncv2.waitKey(0)\ncv2.destroyAllWindows()\n```', explanation: 'Otsu二值化→开运算去噪→findContours计数。' }
+    ];
+
+    // ==================== 状态管理 ====================
+    let currentFilter = 'all';          // 当前题型筛选
+    let filteredQuestions = [];         // 筛选后的题目列表
+    let currentIndex = 0;               // 当前题目在 filteredQuestions 中的索引
+    let currentSelectedOption = null;   // 当前用户选择的选项（用于单选题/判断题）
+    let answerVisible = false;          // 当前题目是否已显示答案（通过"查看本题答案"手动触发）
+    let showAllMode = false;            // 是否处于"显示当前题型所有答案"模式
+
+    // DOM 元素
+    const typeSelect = document.getElementById('typeSelect');
+    const randomBtn = document.getElementById('randomBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const viewAnswerBtn = document.getElementById('viewAnswerBtn');
+    const showAllBtn = document.getElementById('showAllBtn');
+    const progressBadge = document.getElementById('progressBadge');
+    const questionContainer = document.getElementById('questionContainer');
+    const nextLargeBtn = document.getElementById('nextLargeBtn');
+    const toast = document.getElementById('toast');
+
+    // ==================== 工具函数 ====================
+    function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2000);
+    }
+
+    // 根据题型筛选
+    function applyFilter() {
+        const val = typeSelect.value;
+        currentFilter = val;
+        if (val === 'all') {
+            filteredQuestions = questionBank.slice();
+        } else {
+            filteredQuestions = questionBank.filter(q => q.type === val);
+        }
+        currentIndex = 0;
+        currentSelectedOption = null;
+        answerVisible = false;
+        showAllMode = false;
+        updateProgress();
+        render();
+    }
+
+    function updateProgress() {
+        if (filteredQuestions.length === 0) {
+            progressBadge.textContent = '0 / 0';
+            return;
+        }
+        progressBadge.textContent = `${currentIndex + 1} / ${filteredQuestions.length}`;
+    }
+
+    // 获取当前题目对象
+    function getCurrentQuestion() {
+        if (filteredQuestions.length === 0) return null;
+        return filteredQuestions[currentIndex];
+    }
+
+    // 渲染题目卡片
+    function render() {
+        if (filteredQuestions.length === 0) {
+            questionContainer.innerHTML = `<div class="empty-state">📭 当前题型下暂无题目</div>`;
+            nextLargeBtn.disabled = true;
+            return;
+        }
+        nextLargeBtn.disabled = false;
+        const q = getCurrentQuestion();
+        if (!q) return;
+
+        const showAnswer = answerVisible || showAllMode;
+        const isChoice = q.type === '单选题' || q.type === '判断题';
+
+        // 构建选项 HTML
+        let optionsHtml = '';
+        if (q.options && q.options.length > 0) {
+            optionsHtml = `<div class="options">`;
+            q.options.forEach((opt, idx) => {
+                const optLetter = String.fromCharCode(65 + idx); // A, B, C, D
+                let classes = 'option-item';
+                if (isChoice) {
+                    // 用户选择高亮
+                    if (currentSelectedOption === optLetter) classes += ' selected';
+                    // 答案可见时，高亮正确答案和错误答案
+                    if (showAnswer) {
+                        if (optLetter === q.answer) {
+                            classes += ' correct-highlight';
+                        } else if (currentSelectedOption === optLetter && optLetter !== q.answer) {
+                            classes += ' wrong-highlight';
+                        }
+                    }
+                }
+                optionsHtml += `<div class="${classes}" data-opt="${optLetter}" onclick="handleOptionClick('${optLetter}')">
+                    <span class="option-prefix">${optLetter}</span>
+                    <span class="option-text">${opt.substring(2)}</span>
+                </div>`;
+            });
+            optionsHtml += `</div>`;
+        }
+
+        // 答案面板 HTML
+        let answerHtml = '';
+        if (showAnswer) {
+            const answerText = q.answer || '（见解析）';
+            let explanationHtml = '';
+            if (q.explanation) {
+                explanationHtml = `<div class="explanation">💡 ${q.explanation}</div>`;
+            }
+            answerHtml = `<div class="answer-panel">
+                <div class="answer-line"><span class="answer-label">正确答案</span><span class="answer-value">${answerText}</span></div>
+                ${q.type === '编程题' || q.type === '简答题' ? `<pre style="white-space:pre-wrap;font-size:0.9rem;background:#f8fafc;padding:12px;border-radius:14px;margin-top:8px;overflow-x:auto;">${q.answer}</pre>` : ''}
+                ${explanationHtml}
+            </div>`;
+        }
+
+        // 题目类型徽章
+        const typeBadge = `<span class="q-type">${q.type}</span>`;
+        const questionId = `<span class="q-num">第 ${q.id} 题</span>`;
+
+        questionContainer.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    ${questionId}
+                    ${typeBadge}
+                </div>
+                <div class="question-text">${q.question.replace(/\n/g, '<br>')}</div>
+                ${optionsHtml}
+                ${answerHtml}
+            </div>
+        `;
+
+        // 同步按钮状态
+        viewAnswerBtn.textContent = showAnswer ? '🙈 隐藏答案' : '👁️ 查看本题答案';
+        showAllBtn.textContent = showAllMode ? '📋 取消显示所有答案' : '📋 显示当前题型所有答案';
+    }
+
+    // 选项点击事件（全局函数）
+    window.handleOptionClick = function(optLetter) {
+        const q = getCurrentQuestion();
+        if (!q) return;
+        if (q.type !== '单选题' && q.type !== '判断题') return;
+        currentSelectedOption = optLetter;
+        answerVisible = true; // 选择后自动显示答案
+        render();
+        showToast(`已选择 ${optLetter}`);
+    };
+
+    // 下一题
+    function goToNext() {
+        if (filteredQuestions.length === 0) return;
+        if (currentIndex < filteredQuestions.length - 1) {
+            currentIndex++;
+        } else {
+            showToast('已经是最后一题了，重新从第一题开始');
+            currentIndex = 0;
+        }
+        currentSelectedOption = null;
+        answerVisible = false;
+        showAllMode = false;
+        updateProgress();
+        render();
+    }
+
+    // 随机一题
+    function goToRandom() {
+        if (filteredQuestions.length === 0) return;
+        const newIndex = Math.floor(Math.random() * filteredQuestions.length);
+        currentIndex = newIndex;
+        currentSelectedOption = null;
+        answerVisible = false;
+        showAllMode = false;
+        updateProgress();
+        render();
+        showToast('🎲 随机跳转');
+    }
+
+    // 显示/隐藏当前题目答案
+    function toggleAnswer() {
+        if (filteredQuestions.length === 0) return;
+        if (showAllMode) {
+            // 如果处于显示所有模式，先退出该模式
+            showAllMode = false;
+        }
+        answerVisible = !answerVisible;
+        render();
+        showToast(answerVisible ? '已显示答案' : '已隐藏答案');
+    }
+
+    // 显示当前题型所有答案
+    function toggleShowAll() {
+        if (filteredQuestions.length === 0) return;
+        if (!showAllMode) {
+            // 开启所有答案模式
+            showAllMode = true;
+            answerVisible = false; // 重置单题答案状态
+            render();
+            // 连续生成所有题目答案的预览（这里用简要方式：弹出摘要）
+            const summary = filteredQuestions.map(q => {
+                const ans = q.answer || '（见解析）';
+                return `第${q.id}题：${ans}`;
+            }).join('\n');
+            showToast(`📋 已显示当前题型所有答案（共${filteredQuestions.length}题）`);
+            // 可选：alert摘要，但为了避免打扰，用toast提示。也可以控制台输出方便查看。
+            console.log('当前题型所有答案：\n' + summary);
+        } else {
+            showAllMode = false;
+            answerVisible = false;
+            render();
+            showToast('已取消显示所有答案');
+        }
+    }
+
+    // ==================== 事件绑定 ====================
+    typeSelect.addEventListener('change', () => {
+        applyFilter();
+    });
+
+    randomBtn.addEventListener('click', () => {
+        goToRandom();
+    });
+
+    nextBtn.addEventListener('click', () => {
+        goToNext();
+    });
+
+    viewAnswerBtn.addEventListener('click', () => {
+        toggleAnswer();
+    });
+
+    showAllBtn.addEventListener('click', () => {
+        toggleShowAll();
+    });
+
+    nextLargeBtn.addEventListener('click', () => {
+        goToNext();
+    });
+
+    // 键盘快捷键：左/右方向键切换
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            goToNext();
+        } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            if (filteredQuestions.length === 0) return;
+            if (currentIndex > 0) {
+                currentIndex--;
+            } else {
+                currentIndex = filteredQuestions.length - 1;
+            }
+            currentSelectedOption = null;
+            answerVisible = false;
+            showAllMode = false;
+            updateProgress();
+            render();
+        }
+    });
+
+    // ==================== 初始化 ====================
+    applyFilter();
+</script>
+</body>
+</html>
