@@ -13,7 +13,7 @@
         body {
             font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
             background: #f1f5f9;
-            padding: 20px 16px 40px;
+            padding: 20px 16px 170px;
             color: #0f172a;
         }
         .container {
@@ -104,6 +104,55 @@
         }
         .toolbar .spacer {
             flex: 1;
+        }
+        .toolbar .search-wrap {
+            position: relative;
+            flex: 1 1 230px;
+            min-width: 180px;
+        }
+        .toolbar .search-wrap input {
+            width: 100%;
+            padding: 8px 38px 8px 36px;
+            border: 1px solid #cbd5e1;
+            border-radius: 30px;
+            outline: none;
+            background: #f8fafc;
+            color: #0f172a;
+            transition: 0.15s;
+        }
+        .toolbar .search-wrap input:focus {
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        .toolbar .search-wrap input::-webkit-search-cancel-button {
+            -webkit-appearance: none;
+        }
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            left: 13px;
+            color: #94a3b8;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        .toolbar .clear-search {
+            position: absolute;
+            top: 50%;
+            right: 7px;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: #64748b;
+            font-size: 1.1rem;
+            transform: translateY(-50%);
+        }
+        .toolbar .clear-search:hover {
+            border: 0;
+            background: #e2e8f0;
         }
         .badge {
             background: #e2e8f0;
@@ -337,9 +386,91 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+        .stats-dock {
+            position: fixed;
+            left: 50%;
+            bottom: 14px;
+            z-index: 80;
+            width: min(1000px, calc(100% - 16px));
+            padding: 11px 13px 12px;
+            border: 1px solid rgba(203, 213, 225, 0.92);
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 16px 42px rgba(15, 23, 42, 0.16);
+            backdrop-filter: blur(16px);
+            transform: translateX(-50%);
+        }
+        .stats-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 0 3px 8px;
+            color: #334155;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .stats-heading span:last-child {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .stats-list {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 1px;
+            scrollbar-width: thin;
+        }
+        .stat-card {
+            flex: 1 1 150px;
+            min-width: 145px;
+            padding: 8px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 13px;
+            background: #f8fafc;
+        }
+        .stat-card-head,
+        .stat-card-values {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .stat-card-head {
+            margin-bottom: 4px;
+            color: #1e293b;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .stat-progress-percent {
+            color: #64748b;
+            font-size: 0.72rem;
+        }
+        .stat-card-values {
+            margin-bottom: 6px;
+            color: #64748b;
+            font-size: 0.7rem;
+        }
+        .stat-accuracy.good { color: #15803d; }
+        .stat-accuracy.medium { color: #b45309; }
+        .stat-accuracy.low { color: #b91c1c; }
+        .stat-accuracy.neutral { color: #94a3b8; }
+        .stat-track {
+            height: 4px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #e2e8f0;
+        }
+        .stat-track span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #3b82f6, #14b8a6);
+            transition: width 0.2s ease;
+        }
         .toast {
             position: fixed;
-            bottom: 30px;
+            bottom: 124px;
             left: 50%;
             transform: translateX(-50%);
             background: #1e293b;
@@ -356,7 +487,7 @@
         }
         .toast.show {
             opacity: 1;
-            bottom: 40px;
+            bottom: 134px;
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-4px); }
@@ -365,6 +496,10 @@
         @media (max-width: 600px) {
             h1 { font-size: 1.4rem; }
             .toolbar { border-radius: 24px; padding: 12px 14px; }
+            .toolbar .search-wrap { flex-basis: 100%; }
+            .stats-dock { bottom: 8px; padding: 9px 10px 10px; }
+            .stats-heading { margin-bottom: 6px; }
+            .stat-card { min-width: 135px; }
             .card { padding: 20px 16px; }
             .question-text { font-size: 1.05rem; }
             .option-item { padding: 10px 14px; font-size: 0.95rem; }
@@ -390,6 +525,11 @@
             <option value="简答题">📝 简答题</option>
             <option value="编程题">💻 编程题</option>
         </select>
+        <label class="search-wrap">
+            <span class="search-icon">⌕</span>
+            <input id="searchInput" type="search" autocomplete="off" placeholder="搜索题号、题目或选项…">
+            <button class="clear-search" id="clearSearchBtn" type="button" aria-label="清空搜索" hidden>×</button>
+        </label>
         <button id="toggleAllAnswersBtn" class="primary">✅ 显示所有答案</button>
         <button id="resetBtn">↺ 清空当前作答</button>
         <span class="spacer"></span>
@@ -405,6 +545,14 @@
         <button class="secondary-button" id="backToTopBtn">↑ 回到顶部</button>
     </div>
 </div>
+
+<aside class="stats-dock" aria-label="各题型进度与正确率">
+    <div class="stats-heading">
+        <span>各题型进度 · 正确率</span>
+        <span>随时更新</span>
+    </div>
+    <div class="stats-list" id="statsList"></div>
+</aside>
 
 <div id="toast" class="toast"></div>
 
@@ -636,14 +784,19 @@
 
     // ==================== 状态管理 ====================
     let filteredQuestions = [];
+    let searchQuery = '';
     const selectedAnswers = new Map();   // 每题独立保存已选项
     const visibleAnswers = new Set();    // 每题独立保存答案显示状态
+    const questionTypes = [...new Set(questionBank.map(q => q.type))];
 
     // DOM 元素
     const typeSelect = document.getElementById('typeSelect');
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
     const toggleAllAnswersBtn = document.getElementById('toggleAllAnswersBtn');
     const resetBtn = document.getElementById('resetBtn');
     const progressBadge = document.getElementById('progressBadge');
+    const statsList = document.getElementById('statsList');
     const questionContainer = document.getElementById('questionContainer');
     const footerNote = document.getElementById('footerNote');
     const backToTopBtn = document.getElementById('backToTopBtn');
@@ -690,13 +843,67 @@
             .replace(/\n?```\s*$/, '');
     }
 
-    // 根据题型筛选，并一次性渲染该题型下的所有题目
-    function applyFilter() {
+    function getFilteredQuestions() {
         const selectedType = typeSelect.value;
-        filteredQuestions = selectedType === 'all'
-            ? questionBank.slice()
-            : questionBank.filter(q => q.type === selectedType);
+        const normalizedQuery = searchQuery.trim().toLocaleLowerCase('zh-CN');
+
+        return questionBank.filter(q => {
+            if (selectedType !== 'all' && q.type !== selectedType) return false;
+            if (!normalizedQuery) return true;
+
+            const searchable = [
+                String(q.id),
+                q.type,
+                q.question,
+                ...(q.options || []),
+                q.answer || '',
+                q.explanation || ''
+            ].join('\n').toLocaleLowerCase('zh-CN');
+            return searchable.includes(normalizedQuery);
+        });
+    }
+
+    // 根据题型和关键词筛选，并一次性渲染所有匹配题目
+    function applyFilter() {
+        filteredQuestions = getFilteredQuestions();
         render();
+    }
+
+    function renderStats() {
+        statsList.innerHTML = questionTypes.map(type => {
+            const typeQuestions = questionBank.filter(q => q.type === type);
+            const isObjective = type === '单选题' || type === '判断题';
+            const completed = typeQuestions.filter(q =>
+                isObjective ? selectedAnswers.has(q.id) : visibleAnswers.has(q.id)
+            ).length;
+            const correct = typeQuestions.filter(q =>
+                selectedAnswers.get(q.id) === getChoiceAnswer(q)
+            ).length;
+            const progressPercent = typeQuestions.length
+                ? Math.round(completed / typeQuestions.length * 100)
+                : 0;
+            const accuracy = isObjective && completed
+                ? Math.round(correct / completed * 100)
+                : null;
+            const accuracyText = accuracy === null ? '正确率 —' : `正确率 ${accuracy}%`;
+            const accuracyClass = accuracy === null
+                ? 'neutral'
+                : accuracy >= 80 ? 'good' : accuracy >= 60 ? 'medium' : 'low';
+            const progressLabel = isObjective ? '已答' : '已看';
+
+            return `
+                <div class="stat-card">
+                    <div class="stat-card-head">
+                        <span>${type}</span>
+                        <span class="stat-progress-percent">${progressPercent}%</span>
+                    </div>
+                    <div class="stat-card-values">
+                        <span>${progressLabel} ${completed}/${typeQuestions.length}</span>
+                        <span class="stat-accuracy ${accuracyClass}">${accuracyText}</span>
+                    </div>
+                    <div class="stat-track"><span style="width:${progressPercent}%"></span></div>
+                </div>`;
+        }).join('');
     }
 
     function updateControls() {
@@ -707,7 +914,8 @@
         progressBadge.textContent = `${filteredQuestions.length} 题 · 已答 ${answeredCount}`;
         toggleAllAnswersBtn.textContent = allAnswersVisible ? '🙈 收起所有答案' : '✅ 显示所有答案';
         resetBtn.disabled = answeredCount === 0 && visibleCount === 0;
-        footerNote.textContent = `当前显示 ${filteredQuestions.length} 道题，答案状态会保留在本页面中。`;
+        footerNote.textContent = `当前显示 ${filteredQuestions.length} 道题${searchQuery.trim() ? `，搜索“${searchQuery.trim()}”` : ''}，答案状态会保留在本页面中。`;
+        renderStats();
     }
 
     function getPracticeNumber(questionId) {
@@ -863,6 +1071,18 @@
 
     // ==================== 事件绑定 ====================
     typeSelect.addEventListener('change', applyFilter);
+    searchInput.addEventListener('input', () => {
+        searchQuery = searchInput.value;
+        clearSearchBtn.hidden = !searchQuery;
+        applyFilter();
+    });
+    clearSearchBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        searchQuery = '';
+        clearSearchBtn.hidden = true;
+        searchInput.focus();
+        applyFilter();
+    });
     toggleAllAnswersBtn.addEventListener('click', toggleAllAnswers);
     resetBtn.addEventListener('click', resetCurrentAnswers);
     backToTopBtn.addEventListener('click', () => {
